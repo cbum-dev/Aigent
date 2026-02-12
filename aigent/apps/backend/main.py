@@ -11,7 +11,8 @@ from app.routers import (
     companies_router,
     connections_router,
     conversations_router,
-    health_router
+    health_router,
+    agent_router,
 )
 
 settings = get_settings()
@@ -56,7 +57,7 @@ app.include_router(users_router)
 app.include_router(companies_router)
 app.include_router(connections_router)
 app.include_router(conversations_router)
-
+app.include_router(agent_router)
 
 @app.get("/")
 async def root():
