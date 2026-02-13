@@ -78,7 +78,10 @@ async def run_agent_query(
     enc = get_encryption_service()
 
     try:
-        db_password = enc.decrypt(connection.encrypted_password)
+        db_host = enc.decrypt(connection.host_encrypted)
+        db_name = enc.decrypt(connection.database_encrypted)
+        db_user = enc.decrypt(connection.username_encrypted)
+        db_password = enc.decrypt(connection.password_encrypted)
     except Exception:
         raise HTTPException(
             status_code=500,
@@ -90,10 +93,10 @@ async def run_agent_query(
         "question": request.question,
         "company_id": str(current_user.company_id),
         "connection_id": request.connection_id,
-        "db_host": connection.host,
+        "db_host": db_host,
         "db_port": connection.port,
-        "db_name": connection.database,
-        "db_user": connection.username,
+        "db_name": db_name,
+        "db_user": db_user,
         "db_password": db_password,
         "agent_messages": [],
         "retry_count": 0,
@@ -103,7 +106,7 @@ async def run_agent_query(
     graph = build_graph()
 
     try:
-        final_state = await graph.ainvoke(initial_state)
+        final_state = await graph.ainvoke(initial_state, {"recursion_limit": 50})
     except Exception as e:
         raise HTTPException(
             status_code=500,

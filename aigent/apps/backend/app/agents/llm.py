@@ -11,7 +11,7 @@ from app.config import get_settings
 
 def get_llm(
     temperature: float = 0.0,
-    model: str = "gemini-2.0-flash",
+    model: str = "gemini-flash-lite-latest",
 ) -> ChatGoogleGenerativeAI:
     """
     Return a ChatGoogleGenerativeAI instance.

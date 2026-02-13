@@ -16,6 +16,7 @@ from app.agents.supervisor import (
     route_after_supervisor,
     response_builder_node,
     route_after_executor,
+    route_after_sql_writer,
 )
 from app.agents.query_planner import query_planner_node
 from app.agents.sql_writer import sql_writer_node
@@ -57,9 +58,18 @@ def build_graph() -> StateGraph:
         },
     )
 
-    # Linear pipeline: planner → writer → executor
+    # Linear pipeline: planner → writer → conditional
     graph.add_edge("query_planner", "sql_writer")
-    graph.add_edge("sql_writer", "sql_executor")
+
+    # After sql_writer: check for errors before hitting executor
+    graph.add_conditional_edges(
+        "sql_writer",
+        route_after_sql_writer,
+        {
+            "sql_executor": "sql_executor",
+            "response_builder": "response_builder",
+        },
+    )
 
     # After executor: conditional (retry or proceed)
     graph.add_conditional_edges(

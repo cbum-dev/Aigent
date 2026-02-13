@@ -50,6 +50,7 @@ async def sql_executor_node(state: AgentState) -> dict:
         })
         return {
             "error": f"Query execution failed: {error_msg}",
+            "retry_count": state.get("retry_count", 0) + 1,
             "agent_messages": messages,
         }
 
@@ -64,5 +65,6 @@ async def sql_executor_node(state: AgentState) -> dict:
 
     return {
         "query_results": results,
+        "error": None,
         "agent_messages": messages,
     }

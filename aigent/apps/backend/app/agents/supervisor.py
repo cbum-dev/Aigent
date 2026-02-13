@@ -86,6 +86,20 @@ async def response_builder_node(state: AgentState) -> dict:
     }
 
 
+def route_after_sql_writer(state: AgentState) -> str:
+    """
+    After SQL writer: if there was an error (e.g. no relevant tables,
+    unsafe query), skip the executor and go straight to response_builder.
+    """
+    error = state.get("error")
+    sql_query = state.get("sql_query")
+
+    if error or not sql_query:
+        return "response_builder"
+
+    return "sql_executor"
+
+
 def route_after_executor(state: AgentState) -> str:
     """
     After SQL execution: if there was an error and we haven't
