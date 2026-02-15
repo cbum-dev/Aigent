@@ -171,6 +171,35 @@ async def delete_conversation(
     await db.delete(conversation)
 
 
+@router.get("/{conversation_id}/messages", response_model=list[MessageResponse])
+async def list_messages(
+    conversation_id: str,
+    current_user: CurrentUser,
+    db: DbSession
+):
+    """List messages in a conversation."""
+    result = await db.execute(
+        select(Conversation).where(
+            Conversation.id == UUID(conversation_id),
+            Conversation.user_id == current_user.id
+        )
+    )
+    conversation = result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    messages_result = await db.execute(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at)
+    )
+    return messages_result.scalars().all()
+
+
 @router.post("/{conversation_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def add_message(
     conversation_id: str,

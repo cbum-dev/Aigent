@@ -137,12 +137,24 @@ class ApiClient {
         );
     }
 
-    async createConversation(token: string, data: CreateConversationData) {
-        return this.request<Conversation>("/conversations", {
+    async createConversation(token: string, data: { title?: string; database_connection_id?: string }) {
+        return this.request<Conversation>("/conversations/", {
             method: "POST",
             token,
             body: JSON.stringify(data),
         });
+    }
+
+    async getMessages(token: string, conversationId: string) {
+        return this.request<Message[]>(`/conversations/${conversationId}/messages`, { token });
+    }
+
+    getWsUrl(token: string, conversationId: string): string {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const host = process.env.NEXT_PUBLIC_API_URL
+            ? new URL(process.env.NEXT_PUBLIC_API_URL).host
+            : "localhost:8000";
+        return `${protocol}//${host}/chat/${conversationId}?token=${token}`;
     }
 
     async getConversation(token: string, conversationId: string) {
@@ -289,9 +301,21 @@ export interface Message {
     conversation_id: string;
     role: "user" | "assistant" | "system";
     content: string;
-    metadata?: Record<string, unknown>;
+    message_metadata?: {
+        sql_query?: string;
+        chart_config?: any;
+        insights?: string;
+        [key: string]: any;
+    };
     created_at: string;
 }
+
+export type AgentMessage = {
+    agent: string;
+    type: string;
+    content: string;
+    msg_type?: string;
+};
 
 export interface ConversationWithMessages extends Conversation {
     messages: Message[];

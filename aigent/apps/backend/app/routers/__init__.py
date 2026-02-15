@@ -6,6 +6,7 @@ from app.routers.connections import router as connections_router
 from app.routers.conversations import router as conversations_router
 from app.routers.health import router as health_router
 from app.routers.agent import router as agent_router
+from app.routers.chat import router as chat_router
 
 __all__ = [
     "auth_router",
@@ -15,5 +16,7 @@ __all__ = [
     "conversations_router",
     "health_router",
     "agent_router",
+    "chat_router",
 ]
+
 

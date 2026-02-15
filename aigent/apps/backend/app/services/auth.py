@@ -79,6 +79,13 @@ class AuthService:
             return payload
         except JWTError:
             return None
+
+    def verify_token(self, token: str) -> dict:
+        """Verify a token and return the payload."""
+        payload = self.decode_token(token)
+        if payload is None:
+            raise Exception("Invalid token")
+        return payload
     
     @staticmethod
     def create_tokens(user_id: str, company_id: str, email: str) -> dict:
@@ -94,3 +101,8 @@ class AuthService:
             "refresh_token": AuthService.create_refresh_token(token_data),
             "token_type": "bearer",
         }
+
+
+def get_auth_service() -> AuthService:
+    """Return an instance of the authentication service."""
+    return AuthService()
