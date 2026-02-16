@@ -15,6 +15,7 @@ from app.schemas.database_connection import (
 )
 from app.services.encryption import get_encryption_service
 from app.services.connection_manager import ConnectionManager
+from app.services import cache
 
 router = APIRouter(prefix="/connections", tags=["connections"])
 encryption = get_encryption_service()
@@ -48,6 +49,9 @@ async def create_connection(
     
     db.add(connection)
     await db.flush()
+
+    # Invalidate list cache
+    await cache.delete(f"connections:{current_user.company_id}")
     
     # Return with masked values
     return DatabaseConnectionResponse(
@@ -69,6 +73,11 @@ async def create_connection(
 @router.get("", response_model=list[DatabaseConnectionResponse])
 async def list_connections(current_user: CurrentUser, db: DbSession):
     """List all database connections for the current company."""
+    cache_key = f"connections:{current_user.company_id}"
+    cached = await cache.get_json(cache_key)
+    if cached is not None:
+        return cached
+
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.company_id == current_user.company_id
@@ -77,7 +86,7 @@ async def list_connections(current_user: CurrentUser, db: DbSession):
     connections = result.scalars().all()
     
     # Return with masked values
-    return [
+    items = [
         DatabaseConnectionResponse(
             id=conn.id,
             company_id=conn.company_id,
@@ -94,6 +103,8 @@ async def list_connections(current_user: CurrentUser, db: DbSession):
         )
         for conn in connections
     ]
+    await cache.set_json(cache_key, [item.model_dump() for item in items], ttl=300)
+    return items
 
 
 @router.get("/{connection_id}", response_model=DatabaseConnectionResponse)
@@ -103,6 +114,11 @@ async def get_connection(
     db: DbSession
 ):
     """Get a specific database connection."""
+    cache_key = f"connection:{connection_id}"
+    cached = await cache.get_json(cache_key)
+    if cached is not None:
+        return cached
+
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.id == UUID(connection_id),
@@ -117,7 +133,7 @@ async def get_connection(
             detail="Connection not found"
         )
     
-    return DatabaseConnectionResponse(
+    item = DatabaseConnectionResponse(
         id=conn.id,
         company_id=conn.company_id,
         name=conn.name,
@@ -131,6 +147,8 @@ async def get_connection(
         last_test_success=conn.last_test_success,
         created_at=conn.created_at
     )
+    await cache.set_json(cache_key, item.model_dump(), ttl=300)
+    return item
 
 
 @router.delete("/{connection_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -153,6 +171,11 @@ async def delete_connection(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Connection not found"
         )
+
+    # Invalidate caches
+    await cache.delete(f"connection:{connection_id}")
+    await cache.delete(f"connections:{admin_user.company_id}")
+    await cache.delete(f"conn_creds:{connection_id}")
     
     await db.delete(conn)
 

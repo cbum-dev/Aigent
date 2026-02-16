@@ -14,6 +14,7 @@ from app.models.conversation import Conversation, Message, MessageRole
 from app.models.database_connection import DatabaseConnection
 from app.services.encryption import get_encryption_service
 from app.agents.graph import build_graph
+from app.services import cache
 
 
 class ChatService:
@@ -37,6 +38,8 @@ class ChatService:
         self.db.add(message)
         await self.db.commit()
         await self.db.refresh(message)
+        # Invalidate messages cache
+        await cache.delete(f"messages:{conversation_id}")
         return message
 
     async def get_conversation(
@@ -53,6 +56,11 @@ class ChatService:
 
     async def get_connection_credentials(self, connection_id: UUID) -> dict:
         """Retrieve and decrypt connection credentials."""
+        cache_key = f"conn_creds:{connection_id}"
+        cached = await cache.get_json(cache_key)
+        if cached is not None:
+            return cached
+
         result = await self.db.execute(
             select(DatabaseConnection).where(DatabaseConnection.id == connection_id)
         )
@@ -67,13 +75,15 @@ class ChatService:
         username = enc.decrypt(connection.username_encrypted)
         password = enc.decrypt(connection.password_encrypted)
 
-        return {
+        creds = {
             "host": host,
             "port": connection.port,
             "database": database,
             "username": username,
             "password": password,
         }
+        await cache.set_json(cache_key, creds, ttl=600)
+        return creds
 
     async def stream_agent_response(
         self,

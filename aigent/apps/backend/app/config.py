@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
     
 
+    redis_url: str = "redis://localhost:6379"
     debug: bool = True
     
     class Config:

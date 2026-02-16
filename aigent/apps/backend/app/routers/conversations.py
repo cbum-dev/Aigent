@@ -16,6 +16,7 @@ from app.schemas.conversation import (
     ReportCreate,
     ReportResponse
 )
+from app.services import cache
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
@@ -36,6 +37,9 @@ async def create_conversation(
     
     db.add(conversation)
     await db.flush()
+
+    # Invalidate list cache
+    await cache.invalidate_pattern(f"conversations:{current_user.id}:*")
     
     return conversation
 
@@ -48,6 +52,11 @@ async def list_conversations(
     per_page: int = Query(20, ge=1, le=100)
 ):
     """List conversations for the current user."""
+    cache_key = f"conversations:{current_user.id}:{page}"
+    cached = await cache.get_json(cache_key)
+    if cached is not None:
+        return cached
+
     # Count total
     total_result = await db.execute(
         select(func.count(Conversation.id)).where(
@@ -67,12 +76,14 @@ async def list_conversations(
     )
     conversations = result.scalars().all()
     
-    return ConversationList(
+    response = ConversationList(
         items=conversations,
         total=total,
         page=page,
         per_page=per_page
     )
+    await cache.set_json(cache_key, response.model_dump(), ttl=120)
+    return response
 
 
 @router.get("/{conversation_id}", response_model=ConversationWithMessages)
@@ -169,6 +180,10 @@ async def delete_conversation(
         )
     
     await db.delete(conversation)
+    
+    # Invalidate caches
+    await cache.invalidate_pattern(f"conversations:{current_user.id}:*")
+    await cache.delete(f"messages:{conversation_id}")
 
 
 @router.get("/{conversation_id}/messages", response_model=list[MessageResponse])
@@ -178,6 +193,11 @@ async def list_messages(
     db: DbSession
 ):
     """List messages in a conversation."""
+    cache_key = f"messages:{conversation_id}"
+    cached = await cache.get_json(cache_key)
+    if cached is not None:
+        return cached
+
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(conversation_id),
@@ -197,7 +217,10 @@ async def list_messages(
         .where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at)
     )
-    return messages_result.scalars().all()
+    messages = messages_result.scalars().all()
+    items = [MessageResponse.model_validate(m).model_dump() for m in messages]
+    await cache.set_json(cache_key, items, ttl=120)
+    return items
 
 
 @router.post("/{conversation_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
@@ -231,6 +254,9 @@ async def add_message(
     
     db.add(message)
     await db.flush()
+
+    # Invalidate messages cache
+    await cache.delete(f"messages:{conversation_id}")
     
     return message
 

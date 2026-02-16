@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import init_db
+from app.services.cache import init_redis, close_redis
 from app.routers import (
     auth_router,
     users_router,
@@ -29,9 +30,9 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
 
     await init_db()
+    await init_redis(settings.redis_url)
     yield
-
-    pass
+    await close_redis()
 
 
 app = FastAPI(
