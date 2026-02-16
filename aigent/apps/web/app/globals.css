@@ -1,55 +1,105 @@
 @import "tailwindcss";
 
+/* @plugin "tailwindcss-animate"; */
+
+@custom-variant dark (&:is(.dark *));
 @theme {
-  /* Colors - Modern dark theme with vibrant accents */
-  --color-background: 224 71% 4%;
-  --color-foreground: 213 31% 91%;
-  
-  /* Theme Configuration - Change these to swap themes */
-    --color-primary-base: 263 70% 50%;
-    /* Purple */
-    --color-accent-base: 199 89% 48%;
-    /* Cyan */
-  
-    /* Muted & UI Elements */
-  --color-muted: 223 47% 11%;
-  --color-muted-foreground: 215.4 16.3% 56.9%;
-  
-  --color-popover: 224 71% 4%;
-  --color-popover-foreground: 215 20.2% 65.1%;
-  
-  --color-card: 224 71% 4%;
-  --color-card-foreground: 213 31% 91%;
-  
-  --color-border: 216 34% 17%;
-  --color-input: 216 34% 17%;
-  
-  /* Mapped Colors */
-    --color-primary: var(--color-primary-base);
-  --color-primary-foreground: 210 40% 98%;
-  
-  --color-secondary: 222.2 47.4% 11.2%;
-  --color-secondary-foreground: 210 40% 98%;
-  
-  --color-accent: var(--color-accent-base);
-  --color-accent-foreground: 210 40% 98%;
-  
-  --color-destructive: 0 63% 31%;
-  --color-destructive-foreground: 210 40% 98%;
-  
-  --color-ring: var(--color-primary-base);
-  
-  /* Sidebar */
-  --color-sidebar-background: 240 5.9% 10%;
-  --color-sidebar-foreground: 240 4.8% 95.9%;
-  --color-sidebar-primary: var(--color-primary-base);
-  --color-sidebar-primary-foreground: 0 0% 100%;
-  --color-sidebar-accent: 240 3.7% 15.9%;
-  --color-sidebar-accent-foreground: 240 4.8% 95.9%;
-  --color-sidebar-border: 240 3.7% 15.9%;
-  --color-sidebar-ring: var(--color-primary-base);
-  
   --radius: 0.75rem;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+  
+    --color-border: var(--border);
+      --color-input: var(--input);
+      --color-ring: var(--ring);
+  
+    --color-sidebar: var(--sidebar-background);
+      --color-sidebar-foreground: var(--sidebar-foreground);
+      --color-sidebar-primary: var(--sidebar-primary);
+      --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+      --color-sidebar-accent: var(--sidebar-accent);
+      --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+      --color-sidebar-border: var(--sidebar-border);
+      --color-sidebar-ring: var(--sidebar-ring);
+    }
+    
+    :root {
+      /* Light Mode (White & Black) */
+      --background: hsl(0 0% 100%);
+      --foreground: hsl(224 71% 4%);
+    
+      --card: hsl(0 0% 100%);
+      --card-foreground: hsl(224 71% 4%);
+    
+      --popover: hsl(0 0% 100%);
+      --popover-foreground: hsl(224 71% 4%);
+    
+      --primary: hsl(263 70% 50%);
+      --primary-foreground: hsl(210 40% 98%);
+    
+      --secondary: hsl(220 14.3% 95.9%);
+      --secondary-foreground: hsl(220.9 39.3% 11%);
+      --muted: hsl(220 14.3% 95.9%);
+      --muted-foreground: hsl(220 8.9% 46.1%);
+      --accent: hsl(199 89% 48%);
+      --accent-foreground: hsl(224 71% 4%);
+      --destructive: hsl(0 84.2% 60.2%);
+      --destructive-foreground: hsl(210 40% 98%);
+      --border: hsl(220 13% 91%);
+      --input: hsl(220 13% 91%);
+      --ring: hsl(263 70% 50%);
+      --radius: 0.75rem;
+      --sidebar-background: hsl(0 0% 98%);
+      --sidebar-foreground: hsl(240 5.3% 26.1%);
+      --sidebar-primary: hsl(240 5.9% 10%);
+      --sidebar-primary-foreground: hsl(0 0% 98%);
+      --sidebar-accent: hsl(240 4.8% 95.9%);
+      --sidebar-accent-foreground: hsl(240 5.9% 10%);
+      --sidebar-border: hsl(220 13% 91%);
+      --sidebar-ring: hsl(217.2 91.2% 59.8%);
+    }
+.dark {
+  /* Dark Mode (Original) */
+  --background: hsl(224 71% 4%);
+  --foreground: hsl(213 31% 91%);
+  --card: hsl(224 71% 4%);
+    --card-foreground: hsl(213 31% 91%);
+  --popover: hsl(224 71% 4%);
+    --popover-foreground: hsl(215 20.2% 65.1%);
+  --primary: hsl(263 70% 50%);
+    --primary-foreground: hsl(210 40% 98%);
+  --secondary: hsl(222.2 47.4% 11.2%);
+    --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(223 47% 11%);
+    --muted-foreground: hsl(215.4 16.3% 56.9%);
+  --accent: hsl(199 89% 48%);
+    --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 63% 31%);
+    --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(216 34% 17%);
+    --input: hsl(216 34% 17%);
+    --ring: hsl(263 70% 50%);
+  --sidebar-background: hsl(240 5.9% 10%);
+    --sidebar-foreground: hsl(240 4.8% 95.9%);
+    --sidebar-primary: hsl(263 70% 50%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(240 3.7% 15.9%);
+    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+    --sidebar-border: hsl(240 3.7% 15.9%);
+    --sidebar-ring: hsl(263 70% 50%);
 }
 
 @layer base {
@@ -67,7 +117,7 @@
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted)) transparent;
+    scrollbar-color: var(--muted) transparent;
   }
   
   .scrollbar-thin::-webkit-scrollbar {
@@ -80,7 +130,7 @@
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--muted));
+    background-color: var(--muted);
     border-radius: 3px;
   }
   

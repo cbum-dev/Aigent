@@ -6,7 +6,7 @@ import { CheckCircle2, XCircle, Sparkles } from "lucide-react";
 export function UseCases() {
   return (
     <section className="py-24 bg-black relative overflow-hidden">
-      <div className="container px-4 md:px-6 relative z-10">
+        <div className="container px-4 md:px-6 relative z-10 mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="order-2 lg:order-1">
              <div className="h-[450px] relative w-full flex items-center justify-center">

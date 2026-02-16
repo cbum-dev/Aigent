@@ -3,7 +3,7 @@
 export function Demo() {
   return (
     <section className="py-24 bg-black relative overflow-hidden" id="demo">
-      <div className="container px-4 md:px-6 relative z-10">
+      <div className="container px-4 md:px-6 relative z-10 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-white">
             See Aigent in Action

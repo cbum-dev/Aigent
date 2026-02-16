@@ -18,10 +18,10 @@ export function Hero() {
          />
       </div>
 
-      <div className="container relative z-10 px-4 md:px-6">
+      <div className="container relative z-10 px-4 md:px-6 mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           <div className="flex flex-col space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary backdrop-blur-xl w-fit mx-auto lg:mx-0">
+            <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary backdrop-blur-xl w-fit mx-auto">
               <Sparkles className="mr-2 h-3.5 w-3.5" />
               <span>AI Data Analyst V1.0</span>
             </div>
@@ -30,11 +30,11 @@ export function Hero() {
               Turn Questions into <span className="text-primary block mt-2">Instant Insights</span>
             </h1>
             
-            <p className="mx-auto lg:mx-0 max-w-[700px] text-muted-foreground md:text-xl leading-relaxed">
+            <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl leading-relaxed">
               Connect your database, ask questions in plain English, and get secure, visualized answers in seconds. No SQL required.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/20 transition-transform hover:scale-105" asChild>
                 <Link href="/register">
                   Start Analyzing <ArrowRight className="ml-2 h-4 w-4" />

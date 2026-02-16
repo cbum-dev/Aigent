@@ -8,7 +8,7 @@ export function CTA() {
       <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="container px-4 md:px-6 relative z-10 text-center">
+      <div className="container px-4 md:px-6 relative z-10 mx-auto text-center">
         <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
           Ready to Stop Writing Boilerplate SQL?
         </h2>

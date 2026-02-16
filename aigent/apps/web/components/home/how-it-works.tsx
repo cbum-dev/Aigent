@@ -24,7 +24,7 @@ export function HowItWorks() {
         {/* Background blob */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="container px-4 md:px-6 relative z-10">
+      <div className="container px-4 md:px-6 relative z-10 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
             How It Works

@@ -184,7 +184,7 @@ export default function DashboardPage() {
 
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0">
-                <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-background/50 backdrop-blur shrink-0">
+                <header className="h-14 border-b border-primary/10 flex items-center justify-between px-6 bg-background/50 backdrop-blur shrink-0">
                     <div className="flex items-center gap-4">
                         <h1 className="font-semibold text-sm">
                             {conversations.find(c => c.id === activeConversationId)?.title || "New Analysis"}
