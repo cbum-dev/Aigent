@@ -5,6 +5,13 @@
   --color-background: 224 71% 4%;
   --color-foreground: 213 31% 91%;
   
+  /* Theme Configuration - Change these to swap themes */
+    --color-primary-base: 263 70% 50%;
+    /* Purple */
+    --color-accent-base: 199 89% 48%;
+    /* Cyan */
+  
+    /* Muted & UI Elements */
   --color-muted: 223 47% 11%;
   --color-muted-foreground: 215.4 16.3% 56.9%;
   
@@ -17,33 +24,30 @@
   --color-border: 216 34% 17%;
   --color-input: 216 34% 17%;
   
-  /* Primary - Vibrant purple/indigo */
-  --color-primary: 263 70% 50%;
+  /* Mapped Colors */
+    --color-primary: var(--color-primary-base);
   --color-primary-foreground: 210 40% 98%;
   
-  /* Secondary */
   --color-secondary: 222.2 47.4% 11.2%;
   --color-secondary-foreground: 210 40% 98%;
   
-  /* Accent - Cyan/teal */
-  --color-accent: 199 89% 48%;
+  --color-accent: var(--color-accent-base);
   --color-accent-foreground: 210 40% 98%;
   
-  /* Destructive */
   --color-destructive: 0 63% 31%;
   --color-destructive-foreground: 210 40% 98%;
   
-  --color-ring: 263 70% 50%;
+  --color-ring: var(--color-primary-base);
   
   /* Sidebar */
   --color-sidebar-background: 240 5.9% 10%;
   --color-sidebar-foreground: 240 4.8% 95.9%;
-  --color-sidebar-primary: 263 70% 50%;
+  --color-sidebar-primary: var(--color-primary-base);
   --color-sidebar-primary-foreground: 0 0% 100%;
   --color-sidebar-accent: 240 3.7% 15.9%;
   --color-sidebar-accent-foreground: 240 4.8% 95.9%;
   --color-sidebar-border: 240 3.7% 15.9%;
-  --color-sidebar-ring: 263 70% 50%;
+  --color-sidebar-ring: var(--color-primary-base);
   
   --radius: 0.75rem;
 }

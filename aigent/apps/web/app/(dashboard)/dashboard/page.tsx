@@ -50,7 +50,7 @@ export default function DashboardPage() {
         try {
             const data = await api.listConnections(accessToken);
             setConnections(data);
-            if (data.length > 0) setSelectedConnection(data[0].id);
+            if (data && data.length > 0 && data[0]?.id) setSelectedConnection(data[0].id);
         } catch (err) {
             console.error(err);
         }

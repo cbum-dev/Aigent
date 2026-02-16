@@ -1,6 +1,27 @@
-import { redirect } from "next/navigation";
+import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
+import { Hero } from "@/components/home/hero";
+import { Features } from "@/components/home/features";
+import { HowItWorks } from "@/components/home/how-it-works";
+import { CTA } from "@/components/home/cta";
+import { Demo } from "@/components/home/demo";
+import { UseCases } from "@/components/home/use-cases";
+import { LoopBanner } from "@/components/home/loop-banner";
 
 export default function Home() {
-  // Redirect to login for now (will check auth status later)
-  redirect("/login");
+  return (
+    <div className="flex min-h-screen flex-col bg-black text-foreground selection:bg-primary/30">
+      <Navbar />
+      <main className="flex-1">
+        <Hero />
+        <LoopBanner />
+        <Features />
+        <UseCases />
+        <HowItWorks />
+        <Demo />
+        <CTA />
+      </main>
+      <Footer />
+    </div>
+  );
 }
