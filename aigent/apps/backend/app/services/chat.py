@@ -153,6 +153,13 @@ class ChatService:
                 # Also yield the final output
                 if kind == "on_chain_end" and event.get("name") == "LangGraph":
                     final_state = event["data"].get("output", {})
+                    
+                    # Handle LangGraph 0.1+ behavior where output is {'node_name': state_update}
+                    if "response_builder" in final_state:
+                        final_state = final_state["response_builder"]
+                    elif "supervisor" in final_state:
+                        final_state = final_state["supervisor"]
+                    
                     if final_state:
                          yield json.dumps({
                             "type": "result", 

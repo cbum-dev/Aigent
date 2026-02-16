@@ -83,6 +83,10 @@ async def response_builder_node(state: AgentState) -> dict:
     return {
         "final_response": final_response,
         "agent_messages": messages,
+        "sql_query": sql_query,
+        "query_results": state.get("query_results"),
+        "chart_config": state.get("chart_config"),
+        "insights": insights,
     }
 
 
