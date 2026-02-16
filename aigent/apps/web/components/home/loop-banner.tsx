@@ -4,7 +4,7 @@ import CurvedLoop from "@/components/CurvedLoop";
 
 export function LoopBanner() {
   return (
-    <section className="py-12 bg-black overflow-hidden border-y border-white/5">
+    <section className="py-12 overflow-hidden border-y border-border/20 relative z-10 bg-background/50 backdrop-blur-sm">
        <div className="-my-12 opacity-80">
         <CurvedLoop 
             marqueeText="Natural Language to SQL • Instant Insights • Secure & Read-Only • Multi-Database Support • AI Data Analyst • "

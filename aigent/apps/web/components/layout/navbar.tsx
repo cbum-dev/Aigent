@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { ThemeCustomizer } from "@/components/layout/theme-customizer";
 
 export function Navbar() {
   return (
@@ -28,6 +29,7 @@ export function Navbar() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
+            <ThemeCustomizer />
             <ModeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link href="/login">

@@ -31,11 +31,17 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   customClass?: string;
 }
 
+import { cn } from "@/lib/utils";
+
 export const Card = forwardRef<HTMLDivElement, CardProps>(({ customClass, ...rest }, ref) => (
   <div
     ref={ref}
     {...rest}
-    className={`absolute top-1/2 left-1/2 rounded-xl border border-white bg-black [transform-style:preserve-3d] [will-change:transform] [backface-visibility:hidden] ${customClass ?? ''} ${rest.className ?? ''}`.trim()}
+    className={cn(
+      "absolute top-1/2 left-1/2 rounded-xl border border-border bg-card text-card-foreground shadow-xl [transform-style:preserve-3d] [will-change:transform] [backface-visibility:hidden]",
+      customClass,
+      rest.className
+    )}
   />
 ));
 Card.displayName = 'Card';

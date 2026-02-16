@@ -10,7 +10,7 @@ import { LoopBanner } from "@/components/home/loop-banner";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-black text-foreground selection:bg-primary/30">
+    <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-primary/30">
       <Navbar />
       <main className="flex-1">
         <Hero />

@@ -36,10 +36,10 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-24 bg-black relative overflow-hidden" id="features">
+    <section className="py-24 bg-muted/30 relative overflow-hidden transition-colors duration-300" id="features">
       <div className="container px-4 md:px-6 relative z-10 mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-white">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-foreground">
             Powerful Features for Data Teams
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -51,14 +51,14 @@ export function Features() {
           {features.map((feature, index) => (
             <SpotlightCard 
               key={index} 
-              className="border-white/10 bg-white/5 backdrop-blur-sm"
+              className="border-border bg-card/40 dark:bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300"
               spotlightColor="rgba(124, 58, 237, 0.2)" /* Purple spotlight */
             >
               <div className="relative z-10">
-                <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-6">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-6 border border-primary/20">
                   <feature.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                <h3 className="text-xl font-bold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
