@@ -1,0 +1,10 @@
+[
+    {
+        "name": "next",
+        "params": [
+            "install",
+            "recharts",
+            "react-markdown"
+        ]
+    }
+]

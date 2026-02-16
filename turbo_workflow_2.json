@@ -1,0 +1,11 @@
+[
+    {
+        "name": "next",
+        "params": [
+            "install",
+            "@radix-ui/react-select",
+            "@radix-ui/react-collapsible",
+            "lucide-react"
+        ]
+    }
+]

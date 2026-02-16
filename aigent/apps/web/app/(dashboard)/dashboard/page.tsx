@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Database, Loader2, Plus } from "lucide-react";
+import { Send, Sparkles, Database, Loader2, Plus, MessageSquare, ArrowRight, AlertCircle, PanelLeft } from "lucide-react";
 import { useAuthStore } from "@/hooks/use-auth";
 import { useChat, type WsEvent } from "@/hooks/use-chat";
 import { api, type Conversation } from "@/lib/api";
@@ -26,6 +26,7 @@ export default function DashboardPage() {
     const [connections, setConnections] = useState<any[]>([]);
     const [selectedConnection, setSelectedConnection] = useState<string>("");
     const [inputValue, setInputValue] = useState("");
+    const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
     const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -148,100 +149,157 @@ export default function DashboardPage() {
     const showEmptyState = !activeConversationId;
 
     return (
-        <div className="flex h-screen overflow-hidden">
-            {/* Sidebar for conversations (could be merged with main sidebar, but keeping separate for now) */}
-            <div className="w-64 border-r border-border bg-muted/10 flex flex-col hidden lg:flex">
-                <div className="p-4 border-b border-border">
+        <div className="flex h-screen overflow-hidden bg-background relative">
+            {/* Mobile Sidebar Toggle - visible only when sidebar is closed or on mobile if needed */}
+            {/* Actually, we can put the toggle outside or inside. 
+                 If outside, it needs to be absolute or part of the main area.
+             */}
+
+            {/* Conversations Sidebar */}
+            <div
+                className={cn(
+                    "border-r border-border/40 bg-muted/10 hidden md:flex flex-col shrink-0 transition-all duration-300 ease-in-out",
+                    isHistoryOpen ? "w-64 opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-full overflow-hidden border-none"
+                )}
+            >
+                <div className="p-4 h-16 flex items-center border-b border-border/40 justify-between">
                     <Button
-                        variant="outline"
-                        className="w-full justify-start gap-2"
-                        onClick={() => {
-                            setActiveConversationId(null);
-                            setInputValue("");
-                        }}
+                        onClick={handleStartConversation}
+                        className="flex-1 justify-start gap-2 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors border border-primary/20 shadow-none mr-2"
+                        variant="ghost"
+                        size="sm"
+                        disabled={!selectedConnection}
                     >
                         <Plus className="w-4 h-4" />
-                        New Chat
+                        <span className="truncate">New Analysis</span>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => setIsHistoryOpen(false)}
+                    >
+                        <PanelLeft className="w-4 h-4" />
                     </Button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                    {conversations.map((conv) => (
-                        <button
-                            key={conv.id}
-                            onClick={() => setActiveConversationId(conv.id)}
-                            className={cn(
-                                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors truncate",
-                                activeConversationId === conv.id
-                                    ? "bg-primary/10 text-primary font-medium"
-                                    : "hover:bg-muted text-muted-foreground"
-                            )}
-                        >
-                            {conv.title}
-                        </button>
-                    ))}
+
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                    {conversations.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground text-xs">
+                            No history yet
+                        </div>
+                    ) : (
+                        conversations.map((conv) => (
+                            <button
+                                key={conv.id}
+                                onClick={() => setActiveConversationId(conv.id)}
+                                className={cn(
+                                    "w-full text-left p-3 rounded-lg text-sm transition-all duration-200 border border-transparent group relative",
+                                    activeConversationId === conv.id
+                                        ? "bg-background border-border/60 shadow-sm text-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
+                                )}
+                            >
+                                <div className="truncate pr-4">{conv.title || "Untitled Analysis"}</div>
+                                <div className="text-[10px] opacity-60 mt-1 flex items-center justify-between">
+                                    <span>{new Date(conv.created_at).toLocaleDateString()}</span>
+                                </div>
+                            </button>
+                        ))
+                    )}
+                </div>
+
+                <div className="p-4 border-t border-border/40 bg-muted/5">
+                    <div className="text-xs font-medium mb-2 text-muted-foreground">Active Database</div>
+                    <Select value={selectedConnection} onValueChange={setSelectedConnection}>
+                        <SelectTrigger className="w-full text-xs h-8 bg-background border-border/60">
+                            <SelectValue placeholder="Select Database" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {connections.map((conn) => (
+                                <SelectItem key={conn.id} value={conn.id} className="text-xs">
+                                    <div className="flex items-center gap-2">
+                                        <Database className="w-3 h-3" />
+                                        {conn.name}
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0">
-                <header className="h-14 border-b border-primary/10 flex items-center justify-between px-6 bg-background/50 backdrop-blur shrink-0">
+            <div className="flex-1 flex flex-col min-w-0 bg-background/50 backdrop-blur-3xl relative">
+                {/* Header */}
+                <header className="h-16 border-b border-border/40 flex items-center justify-between px-6 bg-background/60 backdrop-blur-xl shrink-0 sticky top-0 z-10 transition-all">
                     <div className="flex items-center gap-4">
-                        <h1 className="font-semibold text-sm">
-                            {conversations.find(c => c.id === activeConversationId)?.title || "New Analysis"}
-                        </h1>
-                        {/* Connection Selector (only if new) */}
-                        {(!activeConversationId) && (
-                            <Select value={selectedConnection} onValueChange={setSelectedConnection}>
-                                <SelectTrigger className="w-[200px] h-8 text-xs">
-                                    <SelectValue placeholder="Select Database" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {connections.map((conn) => (
-                                        <SelectItem key={conn.id} value={conn.id}>
-                                            <div className="flex items-center gap-2">
-                                                <Database className="w-3 h-3" />
-                                                {conn.name}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                        {!isHistoryOpen && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground mr-2 hidden md:flex"
+                                onClick={() => setIsHistoryOpen(true)}
+                            >
+                                <PanelLeft className="w-4 h-4" />
+                            </Button>
                         )}
+                        <div className="flex flex-col">
+                            <h1 className="font-semibold text-sm flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-primary" />
+                                {conversations.find(c => c.id === activeConversationId)?.title || "New Analysis"}
+                            </h1>
+                            {activeConversationId && (
+                                <span className="text-[10px] text-muted-foreground">
+                                    {connections.find(c => c.id === conversations.find(cv => cv.id === activeConversationId)?.database_connection_id)?.name || "Active Session"}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </header>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto scroll-smooth">
                     {showEmptyState ? (
-                        <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                            <div className="p-4 rounded-full bg-primary/10 mb-6">
-                                <Sparkles className="w-8 h-8 text-primary" />
+                        <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-500">
+                            <div className="relative mb-8">
+                                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
+                                <div className="relative p-6 rounded-2xl bg-linear-to-tr from-primary/10 to-accent/10 border border-primary/10 shadow-xl">
+                                    <Sparkles className="w-12 h-12 text-primary" />
+                                </div>
                             </div>
-                            <h2 className="text-2xl font-bold mb-2">Welcome to Aigent</h2>
-                            <p className="text-muted-foreground max-w-md mb-8">
+
+                            <h2 className="text-3xl font-bold mb-3 tracking-tight bg-clip-text text-transparent bg-linear-to-b from-foreground to-foreground/70">
+                                Welcome to Aigent
+                            </h2>
+                            <p className="text-muted-foreground text-lg max-w-md mb-12 leading-relaxed">
                                 Select a database connection and start asking questions.
-                                I will plan queries, execute them, and visualize the results.
+                                I'll analyze your data and visualize the results instantly.
                             </p>
 
                             {!selectedConnection && (
-                                <div className="p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/10 text-yellow-500 text-sm">
+                                <div className="mb-8 p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5 text-yellow-600 dark:text-yellow-500 text-sm flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4" />
                                     Please create a database connection in the "Connections" tab first.
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
                                 {["Show total revenue", "Count users by month", "Top 5 products", "Sales trends"].map(qs => (
-                                    <Button
+                                    <button
                                         key={qs}
-                                        variant="outline"
-                                        className="h-auto py-4 justify-start"
+                                        className="group relative p-4 rounded-xl text-left border border-border/40 bg-card/50 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300 hover:shadow-md"
                                         onClick={() => {
                                             setInputValue(qs);
-                                            // handleStartConversation(); // Simplification: just populate input
+                                            // Optional: auto-focus input
                                         }}
                                     >
-                                        {qs}
-                                    </Button>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-medium text-foreground group-hover:text-primary transition-colors">{qs}</span>
+                                            <ArrowRight className="w-3 h-3 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-1 group-hover:translate-x-0" />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Generate chart and SQL analysis</p>
+                                    </button>
                                 ))}
                             </div>
                         </div>
@@ -253,51 +311,73 @@ export default function DashboardPage() {
 
                             {/* Streaming Thoughts */}
                             {isTyping && thoughts.length > 0 && (
-                                <div className="border-t border-border/50 bg-muted/10 mx-6 rounded-lg my-4 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                                    <div className="border-t border-border/50 bg-muted/10 mx-6 md:mx-12 rounded-lg my-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 shadow-sm">
                                     <div className="px-4 py-2 bg-muted/30 text-xs font-medium text-muted-foreground flex items-center gap-2">
-                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                            <Loader2 className="w-3 h-3 animate-spin text-primary" />
                                         Thinking Process
                                     </div>
-                                    {thoughts.map((t, i) => (
-                                        t.type === "thought" && <AgentThought key={i} thought={t} />
-                                    ))}
+                                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                            {thoughts.map((t, i) => (
+                                                t.type === "thought" && <AgentThought key={i} thought={t} />
+                                            ))}
+                                        </div>
                                 </div>
                             )}
 
-                            <div ref={bottomRef} />
+                                <div ref={bottomRef} className="h-4" />
                         </div>
                     )}
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-border bg-background">
-                    <form
-                        onSubmit={handleSubmit}
-                        className="max-w-4xl mx-auto relative flex items-center gap-2"
-                    >
-                        <Input
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={
-                                !activeConversationId
-                                    ? "Start a new analysis..."
-                                    : "Ask a follow-up question..."
-                            }
-                            className="pr-12 h-12 text-base"
-                            disabled={isTyping && !!activeConversationId} // Disable only if busy in active chat
-                        />
-                        <Button
-                            type="submit"
-                            size="icon"
-                            className="absolute right-1 top-1 h-10 w-10"
-                            disabled={!inputValue.trim() || (isTyping && !!activeConversationId)}
-                        >
-                            <Send className="w-4 h-4" />
-                        </Button>
-                    </form>
-                    <div className="text-center mt-2 text-xs text-muted-foreground">
-                        Aigent can allow AI to run SQL queries on your database. Review generated queries carefully.
+                <div className="p-4 md:p-6 bg-background/80 backdrop-blur-xl border-t border-border/40">
+                    <div className="max-w-4xl mx-auto relative">
+                        <div className={cn(
+                            "relative flex items-center gap-2 rounded-2xl bg-muted/20 border border-border/60 p-1.5 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 focus-within:bg-background shadow-sm hover:border-primary/30",
+                            isTyping && "opacity-80 pointer-events-none"
+                        )}>
+                            <div className="pl-3">
+                                <Sparkles className={cn("w-5 h-5 text-muted-foreground", inputValue && "text-primary")} />
+                            </div>
+                            <Input
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder={
+                                    !activeConversationId
+                                        ? "Ask your data a question..."
+                                        : "Ask a follow-up question..."
+                                }
+                                className="border-0 bg-transparent shadow-none focus-visible:ring-0 h-12 text-base px-2 placeholder:text-muted-foreground/60"
+                                disabled={isTyping && !!activeConversationId}
+                            />
+                            <Button
+                                onClick={(e) => {
+                                    // manually submit form behavior
+                                    e.preventDefault();
+                                    if (activeConversationId) {
+                                        sendMessage(inputValue);
+                                        setInputValue("");
+                                    } else {
+                                        // Trigger new convo logic via existing handlers or simple button click simulation
+                                        const event = { preventDefault: () => { } } as React.FormEvent;
+                                        handleSubmit(event);
+                                    }
+                                }}
+                                size="icon"
+                                className={cn(
+                                    "h-10 w-10 rounded-xl transition-all duration-300",
+                                    !inputValue.trim() ? "opacity-0 scale-90" : "opacity-100 scale-100",
+                                    "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+                                )}
+                                disabled={!inputValue.trim() || (isTyping && !!activeConversationId)}
+                            >
+                                <Send className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        <div className="text-center mt-3 text-[10px] text-muted-foreground font-medium opacity-60">
+                            Aigent allows you to chat with your database. Generated queries should be reviewed.
+                        </div>
                     </div>
                 </div>
             </div>

@@ -298,16 +298,13 @@ export interface Conversation {
 
 export interface Message {
     id: string;
-    conversation_id: string;
     role: "user" | "assistant" | "system";
     content: string;
-    message_metadata?: {
-        sql_query?: string;
-        chart_config?: any;
-        insights?: string;
-        [key: string]: any;
-    };
     created_at: string;
+    conversation_id: string;
+    message_metadata?: Record<string, any>;
+    sql_query?: string | null;
+    data?: any[] | null;
 }
 
 export type AgentMessage = {
