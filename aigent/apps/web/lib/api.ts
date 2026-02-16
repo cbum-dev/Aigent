@@ -178,6 +178,30 @@ class ApiClient {
             body: JSON.stringify({ content }),
         });
     }
+
+    // Reports endpoints
+    async listReports(token: string) {
+        return this.request<ReportListResponse>("/reports", { token });
+    }
+
+    async createReport(token: string, data: CreateReportData) {
+        return this.request<Report>("/reports", {
+            method: "POST",
+            token,
+            body: JSON.stringify(data),
+        });
+    }
+
+    async getReport(token: string, reportId: string) {
+        return this.request<Report>(`/reports/${reportId}`, { token });
+    }
+
+    async deleteReport(token: string, reportId: string) {
+        return this.request<void>(`/reports/${reportId}`, {
+            method: "DELETE",
+            token,
+        });
+    }
 }
 
 export class ApiError extends Error {
@@ -305,6 +329,36 @@ export interface Message {
     message_metadata?: Record<string, any>;
     sql_query?: string | null;
     data?: any[] | null;
+}
+
+export interface Report {
+    id: string;
+    conversation_id: string;
+    title: string;
+    description: string | null;
+    sql_query: string | null;
+    results: Record<string, any> | null;
+    chart_type: string | null;
+    chart_config: Record<string, any> | null;
+    insights: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ReportListResponse {
+    items: Report[];
+    total: number;
+}
+
+export interface CreateReportData {
+    conversation_id: string;
+    title: string;
+    description?: string;
+    sql_query?: string;
+    results?: Record<string, any>;
+    chart_type?: string;
+    chart_config?: Record<string, any>;
+    insights?: string;
 }
 
 export type AgentMessage = {

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, Database, Loader2, Plus, MessageSquare, ArrowRight, AlertCircle, PanelLeft } from "lucide-react";
 import { useAuthStore } from "@/hooks/use-auth";
 import { useChat, type WsEvent } from "@/hooks/use-chat";
-import { api, type Conversation } from "@/lib/api";
+import { api, type Conversation, type Message } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,27 @@ export default function DashboardPage() {
 
     // Chat hook
     const { messages, thoughts, isTyping, sendMessage, isConnected } = useChat(activeConversationId);
+
+    // Save as report handler
+    const handleSaveReport = async (message: Message) => {
+        if (!accessToken || !activeConversationId) return;
+        const meta = message.message_metadata;
+        try {
+            await api.createReport(accessToken, {
+                conversation_id: activeConversationId,
+                title: meta?.chart_config?.title || "Saved Analysis",
+                description: message.content?.slice(0, 200),
+                sql_query: meta?.sql_query,
+                chart_type: meta?.chart_config?.chart_type,
+                chart_config: meta?.chart_config,
+                insights: meta?.insights,
+            });
+            alert("Report saved! View it in the Reports tab.");
+        } catch (err) {
+            console.error("Failed to save report:", err);
+            alert("Failed to save report.");
+        }
+    };
 
     // Load initial data
     useEffect(() => {
@@ -293,7 +314,7 @@ export default function DashboardPage() {
                     ) : (
                         <div className="flex flex-col min-h-full pb-4">
                             {messages.map((msg) => (
-                                <ChatMessage key={msg.id} message={msg} />
+                                <ChatMessage key={msg.id} message={msg} onSaveReport={handleSaveReport} />
                             ))}
 
                             {/* Streaming Thoughts */}

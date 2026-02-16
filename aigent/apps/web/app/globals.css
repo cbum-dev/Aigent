@@ -62,6 +62,11 @@
       --input: hsl(220 13% 91%);
       --ring: hsl(263 70% 50%);
       --radius: 0.75rem;
+      --chart-1: 262 83% 58%;
+        --chart-2: 199 89% 48%;
+        --chart-3: 142 71% 45%;
+        --chart-4: 38 92% 50%;
+        --chart-5: 347 77% 50%;
       --sidebar-background: hsl(0 0% 98%);
       --sidebar-foreground: hsl(240 5.3% 26.1%);
       --sidebar-primary: hsl(240 5.9% 10%);
@@ -92,6 +97,11 @@
   --border: hsl(216 34% 17%);
     --input: hsl(216 34% 17%);
     --ring: hsl(263 70% 50%);
+    --chart-1: 262 83% 65%;
+      --chart-2: 199 89% 55%;
+      --chart-3: 142 71% 55%;
+      --chart-4: 38 92% 60%;
+      --chart-5: 347 77% 60%;
   --sidebar-background: hsl(240 5.9% 10%);
     --sidebar-foreground: hsl(240 4.8% 95.9%);
     --sidebar-primary: hsl(263 70% 50%);

@@ -40,7 +40,7 @@ export default function DashboardLayout({
             {/* Main content */}
             <main
                 className={cn(
-                    "flex-1 transition-all duration-300 flex flex-col h-full overflow-hidden relative",
+                    "flex-1 transition-all duration-300 flex flex-col h-full overflow-y-auto relative",
                     sidebarCollapsed ? "lg:ml-20" : "lg:ml-72" // Matched width w-20 and w-72 from sidebar
                 )}
             >
