@@ -35,11 +35,13 @@ export default function DashboardLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, isAuthenticated, logout, fetchUser } = useAuthStore();
+    const { user, isAuthenticated, logout, fetchUser, _hasHydrated } = useAuthStore();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
+        if (!_hasHydrated) return;
+
         if (!isAuthenticated) {
             router.push("/login");
             return;
@@ -48,7 +50,7 @@ export default function DashboardLayout({
         if (!user) {
             fetchUser();
         }
-    }, [isAuthenticated, user, router, fetchUser]);
+    }, [isAuthenticated, user, router, fetchUser, _hasHydrated]);
 
     const handleLogout = () => {
         logout();
@@ -64,7 +66,7 @@ export default function DashboardLayout({
             .slice(0, 2);
     };
 
-    if (!isAuthenticated) {
+    if (!_hasHydrated || !isAuthenticated) {
         return null;
     }
 

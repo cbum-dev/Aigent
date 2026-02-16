@@ -23,6 +23,8 @@ interface AuthState {
     refreshTokens: () => Promise<void>;
     fetchUser: () => Promise<void>;
     setTokens: (tokens: TokenResponse) => void;
+    _hasHydrated: boolean;
+    setHasHydrated: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -124,6 +126,12 @@ export const useAuthStore = create<AuthState>()(
                     }
                 }
             },
+            _hasHydrated: false,
+            setHasHydrated: (state) => {
+                set({
+                    _hasHydrated: state
+                });
+            },
         }),
         {
             name: "aigent-auth",
@@ -132,6 +140,9 @@ export const useAuthStore = create<AuthState>()(
                 refreshToken: state.refreshToken,
                 isAuthenticated: state.isAuthenticated,
             }),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );
