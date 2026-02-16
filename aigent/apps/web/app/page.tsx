@@ -7,6 +7,7 @@ import { CTA } from "@/components/home/cta";
 import { Demo } from "@/components/home/demo";
 import { UseCases } from "@/components/home/use-cases";
 import { LoopBanner } from "@/components/home/loop-banner";
+import { ChartsShowcase } from "@/components/home/charts-showcase";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
         <Hero />
         <LoopBanner />
         <Features />
+        <ChartsShowcase />
         <UseCases />
         <HowItWorks />
         <Demo />

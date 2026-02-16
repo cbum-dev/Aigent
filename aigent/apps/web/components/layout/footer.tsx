@@ -23,28 +23,28 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li><Link href="#features" className="hover:text-foreground transition-colors">Features</Link></li>
               <li><Link href="#pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-              <li><Link href="/changelog" className="hover:text-foreground transition-colors">Changelog</Link></li>
-              <li><Link href="/roadmap" className="hover:text-foreground transition-colors">Roadmap</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Changelog</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Roadmap</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4 text-sm">Resources</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><Link href="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
-              <li><Link href="/api" className="hover:text-foreground transition-colors">API Reference</Link></li>
-              <li><Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
-              <li><Link href="/community" className="hover:text-foreground transition-colors">Community</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Documentation</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">API Reference</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Blog</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Community</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4 text-sm">Company</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><Link href="/about" className="hover:text-foreground transition-colors">About</Link></li>
-              <li><Link href="/careers" className="hover:text-foreground transition-colors">Careers</Link></li>
-              <li><Link href="/legal/privacy" className="hover:text-foreground transition-colors">Privacy</Link></li>
-              <li><Link href="/legal/terms" className="hover:text-foreground transition-colors">Terms</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">About</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Careers</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Privacy</Link></li>
+              <li><Link href="#" className="hover:text-foreground transition-colors">Terms</Link></li>
             </ul>
           </div>
         </div>

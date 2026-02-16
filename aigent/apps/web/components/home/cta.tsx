@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useAuthStore } from "@/hooks/use-auth";
 
 export function CTA() {
+  const { isAuthenticated } = useAuthStore();
+
   return (
     <section className="py-24 bg-linear-to-br from-primary/10 via-background to-accent/5 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />
@@ -18,8 +23,8 @@ export function CTA() {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="default" asChild className="text-md h-12 px-8 shadow-xl shadow-primary/20">
-              <Link href="/register">
-                Start Analyzing Now
+            <Link href={isAuthenticated ? "/dashboard" : "/register"}>
+              {isAuthenticated ? "Go to Dashboard" : "Start Analyzing Now"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

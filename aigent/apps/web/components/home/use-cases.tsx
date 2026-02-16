@@ -5,11 +5,11 @@ import { CheckCircle2, XCircle, Sparkles } from "lucide-react";
 
 export function UseCases() {
   return (
-     <section className="pt-24 pb-48 bg-background relative overflow-hidden transition-colors duration-300">
+     <section className="pt-16 pb-24 md:pt-24 md:pb-48 bg-background relative overflow-hidden transition-colors duration-300">
         <div className="container px-4 md:px-6 relative z-10 mx-auto">
-           <div className="grid lg:grid-cols-2 gap-32 items-center">
+           <div className="grid lg:grid-cols-2 gap-12 lg:gap-32 items-center">
           <div className="order-2 lg:order-1">
-             <div className="h-[450px] relative w-full flex items-center justify-center">
+                 <div className="h-[400px] md:h-[450px] relative w-full flex items-center justify-center">
                 <CardSwap 
                    width="100%" 
                    height="100%" 
@@ -18,7 +18,7 @@ export function UseCases() {
                    skewAmount={0}
                 >
                    {/* Card 1: The 'Before' Chaos */}
-                       <Card customClass="w-[320px] h-[400px] bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-500/20 p-6 flex flex-col backdrop-blur-xl transition-colors">
+                       <Card customClass="w-[280px] xs:w-[320px] h-[380px] md:h-[400px] bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-500/20 p-5 md:p-6 flex flex-col backdrop-blur-xl transition-colors">
                           <div className="flex items-center gap-3 mb-4 text-red-600 dark:text-red-400">
                          <XCircle className="w-6 h-6" />
                          <span className="font-bold">The Old Way</span>
