@@ -61,13 +61,17 @@ class ChatService:
             raise ValueError("Connection not found")
 
         enc = get_encryption_service()
-        password = enc.decrypt(connection.encrypted_password)
+        
+        host = enc.decrypt(connection.host_encrypted)
+        database = enc.decrypt(connection.database_encrypted)
+        username = enc.decrypt(connection.username_encrypted)
+        password = enc.decrypt(connection.password_encrypted)
 
         return {
-            "host": connection.host,
+            "host": host,
             "port": connection.port,
-            "database": connection.database,
-            "username": connection.username,
+            "database": database,
+            "username": username,
             "password": password,
         }
 
@@ -125,19 +129,19 @@ class ChatService:
                         # we rely on the specific agent node outputs which usually return just their own update
                         # OR create specific events inside the nodes.
                         
-                        # Better approach for now: Check if this is a node execution
-                        tags = event.get("tags", [])
-                        node_name = next((t for t in tags if t in [
+                        # Better approach: Check event name against known nodes
+                        node_name = event.get("name")
+                        
+                        if node_name in [
                             "query_planner", "sql_writer", "sql_executor", 
                             "visualization", "insight", "supervisor"
-                        ]), None)
-                        
-                        if node_name:
+                        ]:
                             # Send a specific event for this node
                             # Extract content from AgentMessage if present
                             msgs = data.get("agent_messages", [])
                             if msgs:
                                 last_msg = msgs[-1]
+                                # Ensure the message actually belongs to this agent
                                 if last_msg["agent"] == node_name:
                                     yield json.dumps({
                                         "type": "thought",
