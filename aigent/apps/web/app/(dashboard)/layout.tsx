@@ -33,14 +33,14 @@ export default function DashboardLayout({
     }
 
     return (
-        <div className="min-h-screen flex bg-background selection:bg-primary/20">
+        <div className="h-screen w-full flex bg-background selection:bg-primary/20 overflow-hidden">
             {/* Sidebar */}
             <DashboardSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
 
             {/* Main content */}
             <main
                 className={cn(
-                    "flex-1 transition-all duration-300 flex flex-col min-h-screen",
+                    "flex-1 transition-all duration-300 flex flex-col h-full overflow-hidden relative",
                     sidebarCollapsed ? "lg:ml-20" : "lg:ml-72" // Matched width w-20 and w-72 from sidebar
                 )}
             >

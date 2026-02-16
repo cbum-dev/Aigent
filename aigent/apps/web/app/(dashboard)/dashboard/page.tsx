@@ -149,41 +149,29 @@ export default function DashboardPage() {
     const showEmptyState = !activeConversationId;
 
     return (
-        <div className="flex h-screen overflow-hidden bg-background relative">
-            {/* Mobile Sidebar Toggle - visible only when sidebar is closed or on mobile if needed */}
-            {/* Actually, we can put the toggle outside or inside. 
-                 If outside, it needs to be absolute or part of the main area.
-             */}
-
+        <div className="flex flex-col h-full w-full overflow-hidden bg-background relative">
+            <div className="flex flex-1 overflow-hidden">
             {/* Conversations Sidebar */}
-            <div
+                <div 
                 className={cn(
-                    "border-r border-border/40 bg-muted/10 hidden md:flex flex-col shrink-0 transition-all duration-300 ease-in-out",
-                    isHistoryOpen ? "w-64 opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-full overflow-hidden border-none"
+                    "border-r border-border/40 bg-muted/10 hidden md:flex flex-col shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden",
+                    isHistoryOpen ? "w-64 opacity-100" : "w-0 opacity-0 border-none"
                 )}
             >
-                <div className="p-4 h-16 flex items-center border-b border-border/40 justify-between">
+                    <div className="p-4 h-16 flex items-center border-b border-border/40 justify-between shrink-0">
                     <Button
-                        onClick={handleStartConversation}
-                        className="flex-1 justify-start gap-2 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors border border-primary/20 shadow-none mr-2"
+                            onClick={handleStartConversation} 
+                            className="w-full justify-start gap-2 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors border border-primary/20 shadow-none"
                         variant="ghost"
                         size="sm"
                         disabled={!selectedConnection}
                     >
                         <Plus className="w-4 h-4" />
                         <span className="truncate">New Analysis</span>
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => setIsHistoryOpen(false)}
-                    >
-                        <PanelLeft className="w-4 h-4" />
-                    </Button>
+                        </Button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar w-64">
                     {conversations.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground text-xs">
                             No history yet
@@ -196,7 +184,7 @@ export default function DashboardPage() {
                                 className={cn(
                                     "w-full text-left p-3 rounded-lg text-sm transition-all duration-200 border border-transparent group relative",
                                     activeConversationId === conv.id
-                                        ? "bg-background border-border/60 shadow-sm text-foreground font-medium"
+                                        ? "bg-background border-border/60 shadow-sm text-foreground font-medium" 
                                         : "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
                                 )}
                             >
@@ -209,7 +197,7 @@ export default function DashboardPage() {
                     )}
                 </div>
 
-                <div className="p-4 border-t border-border/40 bg-muted/5">
+                    <div className="p-4 border-t border-border/40 bg-muted/5 w-64 shrink-0">
                     <div className="text-xs font-medium mb-2 text-muted-foreground">Active Database</div>
                     <Select value={selectedConnection} onValueChange={setSelectedConnection}>
                         <SelectTrigger className="w-full text-xs h-8 bg-background border-border/60">
@@ -233,17 +221,16 @@ export default function DashboardPage() {
             <div className="flex-1 flex flex-col min-w-0 bg-background/50 backdrop-blur-3xl relative">
                 {/* Header */}
                 <header className="h-16 border-b border-border/40 flex items-center justify-between px-6 bg-background/60 backdrop-blur-xl shrink-0 sticky top-0 z-10 transition-all">
-                    <div className="flex items-center gap-4">
-                        {!isHistoryOpen && (
+                        <div className="flex items-center gap-4">
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground mr-2 hidden md:flex"
-                                onClick={() => setIsHistoryOpen(true)}
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground mr-2 hidden md:flex shrink-0"
+                                onClick={() => setIsHistoryOpen(!isHistoryOpen)}
                             >
                                 <PanelLeft className="w-4 h-4" />
                             </Button>
-                        )}
+
                         <div className="flex flex-col">
                             <h1 className="font-semibold text-sm flex items-center gap-2">
                                 <MessageSquare className="w-4 h-4 text-primary" />
@@ -259,8 +246,8 @@ export default function DashboardPage() {
                 </header>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto scroll-smooth">
-                    {showEmptyState ? (
+                    <div className="flex-1 overflow-y-scroll scroll-smooth scrollbar scrollbar-thumb-primary/90 scrollbar-track-primary/10">
+                        {showEmptyState ? ( 
                         <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-500">
                             <div className="relative mb-8">
                                 <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
@@ -381,6 +368,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 }

@@ -10,14 +10,6 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChartRenderer } from "@/components/chart-renderer";
 import { DataChart } from "@/components/data-chart";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import type { Message } from "@/lib/api";
 import type { WsEvent } from "@/hooks/use-chat";
 
@@ -64,7 +56,7 @@ export function ChatMessage({ message }: { message: Message }) {
                                             <div className="flex items-center justify-between px-4 py-1.5 bg-muted/40 border-b border-border/40 text-xs text-muted-foreground">
                                                 <span>{match[1]}</span>
                                             </div>
-                                            <div className="overflow-x-auto bg-muted/20 p-4">
+                                            <div className="overflow-x-auto bg-muted/20 p-4 scrollbar scrollbar-thumb-primary/90 scrollbar-track-primary/10">
                                                 <code className={className} {...props}>
                                                     {children}
                                                 </code>

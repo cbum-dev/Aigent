@@ -1,101 +1,88 @@
-import Image, { type ImageProps } from "next/image";
+import Image from "next/image";
 import { Button } from "@repo/ui/button";
 import styles from "./page.module.css";
-
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
-
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
-
-  return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
 
 export default function Home() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/docs/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Aigent Documentation</h1>
+          <p style={{ fontSize: '1.2rem', color: '#666' }}>
+            The AI-powered SQL Agent for your database.
+          </p>
+        </div>
 
-        <div className={styles.ctas}>
+        <div style={{ maxWidth: '800px', width: '100%', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <section style={{ border: '1px solid #eaeaea', padding: '1.5rem', borderRadius: '8px' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>🚀 Getting Started</h2>
+            <p>
+              Aigent connects to your PostgreSQL database and allows you to query data using natural language.
+            </p>
+            <ul style={{ paddingLeft: '1.5rem', marginTop: '1rem', lineHeight: '1.6' }}>
+              <li>1. Login to the Dashboard</li>
+              <li>2. Navigate to <strong>Connections</strong></li>
+              <li>3. Add your Database credentials</li>
+              <li>4. Start asking questions in the <strong>Chat</strong></li>
+            </ul>
+          </section>
+
+          <section style={{ border: '1px solid #eaeaea', padding: '1.5rem', borderRadius: '8px' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>✨ New Features</h2>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Collapsible Sidebar</h3>
+              <p style={{ marginTop: '0.5rem', color: '#444' }}>
+                The dashboard now features a tailored sidebar that can be expanded or collapsed to maximize your workspace.
+                Focus on your data when you need to, and access navigation when you don't.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Smart SQL Generation</h3>
+              <p style={{ marginTop: '0.5rem', color: '#444' }}>
+                Our agent analyzes your schema and generates optimized SQL queries. It automatically visualizes the results
+                using interactive charts and tables.
+              </p>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Dark Mode Support</h3>
+              <p style={{ marginTop: '0.5rem', color: '#444' }}>
+                Seamlessly switch between light and dark themes. The interface adapts instantly to your preference.
+              </p>
+            </div>
+          </section>
+
+          <section style={{ border: '1px solid #eaeaea', padding: '1.5rem', borderRadius: '8px' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>🛠 architecture</h2>
+            <p>Built with:</p>
+            <ul style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
+              <li>• Next.js 14 (App Router)</li>
+              <li>• TailwindCSS + Shadcn/UI</li>
+              <li>• FastAPI Backend</li>
+              <li>• LangChain + GPT-4o</li>
+            </ul>
+          </section>
+        </div>
+
+        <div className={styles.ctas} style={{ marginTop: '3rem' }}>
           <a
             className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
+            href="http://localhost:3000"
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
+            Open App
           </a>
-          <a
-            href="https://turborepo.dev/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+          <Button appName="docs" className={styles.secondary}>
+            Click me!
+          </Button>
         </div>
-        <Button appName="docs" className={styles.secondary}>
-          Open alert
-        </Button>
       </main>
+
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.dev?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.dev →
-        </a>
+        <p>Aigent Systems © 2026</p>
       </footer>
     </div>
   );
