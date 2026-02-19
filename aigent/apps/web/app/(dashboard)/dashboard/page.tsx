@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import DbDashboard from "@/components/db-dashboard";
 
 export default function DashboardPage() {
     const { accessToken } = useAuthStore();
@@ -27,6 +28,7 @@ export default function DashboardPage() {
     const [selectedConnection, setSelectedConnection] = useState<string>("");
     const [inputValue, setInputValue] = useState("");
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+    const [viewMode, setViewMode] = useState<"dashboard" | "chat">("dashboard");
 
     const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -126,6 +128,7 @@ export default function DashboardPage() {
         } else {
             sendMessage(inputValue);
             setInputValue("");
+            setViewMode("chat");
         }
     };
 
@@ -162,12 +165,16 @@ export default function DashboardPage() {
             } else {
                 sendMessage(inputValue);
                 setInputValue("");
+                setViewMode("chat");
             }
         }
     };
 
     // If no conversation selected, show empty state or list
     const showEmptyState = !activeConversationId;
+    const activeConv = conversations.find(c => c.id === activeConversationId);
+    const activeConnectionId = activeConv?.database_connection_id || selectedConnection;
+    const showDashboard = viewMode === "dashboard" && !!activeConnectionId;
 
     return (
         <div className="flex flex-col h-full w-full overflow-hidden bg-background relative">
@@ -255,20 +262,50 @@ export default function DashboardPage() {
                         <div className="flex flex-col">
                             <h1 className="font-semibold text-sm flex items-center gap-2">
                                 <MessageSquare className="w-4 h-4 text-primary" />
-                                {conversations.find(c => c.id === activeConversationId)?.title || "New Analysis"}
+                                    {activeConv?.title || "New Analysis"}
                             </h1>
                             {activeConversationId && (
                                 <span className="text-[10px] text-muted-foreground">
-                                    {connections.find(c => c.id === conversations.find(cv => cv.id === activeConversationId)?.database_connection_id)?.name || "Active Session"}
+                                        {connections.find(c => c.id === activeConv?.database_connection_id)?.name || "Active Session"}
                                 </span>
                             )}
                         </div>
                     </div>
+
+                        {/* View mode toggle */}
+                        {activeConnectionId && (
+                            <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5 border border-border/40">
+                                <button
+                                    onClick={() => setViewMode("dashboard")}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                        viewMode === "dashboard"
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    Dashboard
+                                </button>
+                                <button
+                                    onClick={() => setViewMode("chat")}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                        viewMode === "chat"
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    Chat
+                                </button>
+                            </div>
+                        )}
                 </header>
 
-                {/* Messages */}
+                    {/* Content Area */}
                     <div className="flex-1 overflow-y-scroll scroll-smooth scrollbar scrollbar-thumb-primary/90 scrollbar-track-primary/10">
-                        {showEmptyState ? ( 
+                        {showDashboard ? (
+                            <DbDashboard connectionId={activeConnectionId} />
+                        ) : showEmptyState ? ( 
                         <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-500">
                             <div className="relative mb-8">
                                 <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
@@ -366,6 +403,7 @@ export default function DashboardPage() {
                                     if (activeConversationId) {
                                         sendMessage(inputValue);
                                         setInputValue("");
+                                        setViewMode("chat");
                                     } else {
                                         // Trigger new convo logic via existing handlers or simple button click simulation
                                         const event = { preventDefault: () => { } } as React.FormEvent;

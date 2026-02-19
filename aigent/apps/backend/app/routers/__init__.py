@@ -8,6 +8,7 @@ from app.routers.health import router as health_router
 from app.routers.agent import router as agent_router
 from app.routers.chat import router as chat_router
 from app.routers.reports import router as reports_router
+from app.routers.dashboard import router as dashboard_router
 
 __all__ = [
     "auth_router",
@@ -19,6 +20,7 @@ __all__ = [
     "agent_router",
     "chat_router",
     "reports_router",
+    "dashboard_router",
 ]
 
 

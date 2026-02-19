@@ -202,6 +202,11 @@ class ApiClient {
             token,
         });
     }
+
+    // Dashboard endpoints
+    async getDashboardMetrics(token: string, connectionId: string) {
+        return this.request<DashboardPayload>(`/connections/${connectionId}/dashboard`, { token });
+    }
 }
 
 export class ApiError extends Error {
@@ -386,3 +391,27 @@ export interface CreateConversationData {
 
 // Export singleton instance
 export const api = new ApiClient(API_URL);
+
+// Dashboard types
+export interface StatCard {
+    label: string;
+    value: string | number;
+    subtitle?: string;
+    icon?: string;
+}
+
+export interface DashboardWidget {
+    id: string;
+    title: string;
+    widget_type: "stat" | "bar" | "pie" | "table";
+    data?: Record<string, any>[];
+    config?: Record<string, any>;
+    stat?: StatCard;
+}
+
+export interface DashboardPayload {
+    connection_id: string;
+    connection_name: string;
+    overview: StatCard[];
+    widgets: DashboardWidget[];
+}
