@@ -47,17 +47,22 @@ async def sql_writer_node(state: AgentState) -> dict:
     llm = get_llm(temperature=0.0)
 
     system_prompt = (
-        "You are an expert PostgreSQL developer. Generate a single SQL query "
-        "to answer the user's question.\n\n"
-        "RULES:\n"
-        "1. Write ONLY SELECT statements. Never write INSERT, UPDATE, DELETE, DROP, ALTER, or any DDL.\n"
-        "2. Use the exact table and column names from the schema provided.\n"
-        "3. Always qualify columns with table names when using JOINs.\n"
-        "4. Use appropriate aggregations (SUM, COUNT, AVG, etc.) when the question implies them.\n"
-        "5. Add ORDER BY when relevant for clarity.\n"
-        "6. LIMIT results to 1000 rows maximum.\n"
-        "7. Use standard PostgreSQL syntax.\n\n"
-        "Return ONLY the SQL query — no explanations, no markdown fences, no comments."
+        "You are an expert PostgreSQL developer. Generate a single SELECT SQL query "
+        "to answer the user's question.\n"
+        "DATABASE SCHEMA:\n"
+        f"{schema_context}\n\n"
+        "STRICT RULES:\n"
+        "1. Write ONLY SELECT statements. Never write DDL or DML.\n"
+        "2. Use the exact table and column names from the schema.\n"
+        "3. **CRITICAL: DO NOT FORMAT DATA.** Never use TO_CHAR(), currency symbols ($), or percentage signs in the SQL. "
+        "Return raw numeric and date values. Formatting will be handled by the UI.\n"
+        "4. Always qualify columns with table names (e.g. orders.total_amount) when using JOINs or if ambiguous.\n"
+        "5. Use appropriate aggregations (SUM, COUNT, AVG, etc.). When calculating **revenue**, prioritize filters like `status = 'completed'` or `status = 'paid'` if those columns exist, to ensure accurate financial metrics.\n"
+        "6. If the question asks for 'last month', calculate it relative to CURRENT_DATE using: "
+        "order_date >= date_trunc('month', CURRENT_DATE - INTERVAL '1 month') "
+        "AND order_date < date_trunc('month', CURRENT_DATE)\n"
+        "7. LIMIT results to 1000 rows.\n"
+        "Return ONLY the SQL query — no markdown, no comments, no explanations."
     )
 
     human_prompt = (

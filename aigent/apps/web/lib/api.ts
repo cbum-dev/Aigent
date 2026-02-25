@@ -204,8 +204,8 @@ class ApiClient {
     }
 
     // Dashboard endpoints
-    async getDashboardMetrics(token: string, connectionId: string) {
-        return this.request<DashboardPayload>(`/connections/${connectionId}/dashboard`, { token });
+    async getDashboardMetrics(token: string, connectionId: string, refresh = false) {
+        return this.request<DashboardPayload>(`/connections/${connectionId}/dashboard${refresh ? '?refresh=true' : ''}`, { token });
     }
 }
 
@@ -403,7 +403,7 @@ export interface StatCard {
 export interface DashboardWidget {
     id: string;
     title: string;
-    widget_type: "stat" | "bar" | "pie" | "table";
+    widget_type: "stat" | "bar" | "pie" | "line" | "table";
     data?: Record<string, any>[];
     config?: Record<string, any>;
     stat?: StatCard;
@@ -412,6 +412,8 @@ export interface DashboardWidget {
 export interface DashboardPayload {
     connection_id: string;
     connection_name: string;
+    db_type: string;
+    summary: string;
     overview: StatCard[];
     widgets: DashboardWidget[];
 }

@@ -46,23 +46,24 @@ async def visualization_node(state: AgentState) -> dict:
     llm = get_llm(temperature=0.0)
 
     system_prompt = (
-        "You are a data visualization expert. Given query results, decide the best chart type "
+        "You are a data visualization expert. Given SQL query results, decide the best chart type "
         "and produce a chart configuration.\n\n"
-        "AVAILABLE CHART TYPES: bar, line, pie, area, table\n\n"
-        "RULES:\n"
-        "- Choose 'table' if the data is too complex or has many columns.\n"
-        "- Choose 'pie' for proportion/distribution data with ≤ 8 categories.\n"
-        "- Choose 'line' for time-series data.\n"
+        "AVAILABLE CHART TYPES: stat, bar, line, pie, area, table\n\n"
+        "CHOICE LOGIC:\n"
+        "- Choose 'stat' if the result is a single value (1 row, 1 column), like a total count or sum.\n"
+        "- Choose 'pie' for proportion/distribution data (e.g. counts by status) with ≤ 8 categories.\n"
+        "- Choose 'line' for time-series data with multiple data points.\n"
         "- Choose 'bar' for comparisons across categories.\n"
-        "- Choose 'area' for cumulative trends.\n\n"
-        "Return ONLY valid JSON with this exact structure (no markdown fences):\n"
+        "- Choose 'area' for cumulative trends over time.\n"
+        "- Choose 'table' if there are many columns or the data doesn't fit a chart.\n\n"
+        "Return ONLY valid JSON with this exact structure (no markdown):\n"
         "{\n"
-        '  "chart_type": "bar|line|pie|area|table",\n'
+        '  "chart_type": "stat|bar|line|pie|area|table",\n'
         '  "title": "descriptive chart title",\n'
-        '  "x_axis": "column name for x-axis",\n'
-        '  "y_axis": "column name for y-axis",\n'
+        '  "x_axis": "column name for labels (ignored for stat)",\n'
+        '  "y_axis": "column name for values",\n'
         '  "x_label": "human readable x-axis label",\n'
-        '  "y_label": "human readable y-axis label"\n'
+        '  "y_label": "human readable y-axis label (e.g. Total Revenue)"\n'
         "}"
     )
 

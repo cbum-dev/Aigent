@@ -54,7 +54,7 @@ const CHART_COLORS = [
 ];
 
 interface ChartConfig {
-    chart_type: "bar" | "line" | "pie" | "area" | "table";
+    chart_type: "bar" | "line" | "pie" | "area" | "table" | "stat";
     title: string;
     x_axis: string;
     y_axis: string;
@@ -64,7 +64,7 @@ interface ChartConfig {
     labels: string[];
 }
 
-type ChartType = "bar" | "line" | "pie" | "area" | "table";
+type ChartType = "bar" | "line" | "pie" | "area" | "table" | "stat";
 
 const chartIcons: Record<ChartType, React.ReactNode> = {
     bar: <BarChart3 className="w-3.5 h-3.5" />,
@@ -72,6 +72,7 @@ const chartIcons: Record<ChartType, React.ReactNode> = {
     pie: <PieIcon className="w-3.5 h-3.5" />,
     area: <AreaIcon className="w-3.5 h-3.5" />,
     table: <Table2 className="w-3.5 h-3.5" />,
+    stat: <BarChart3 className="w-3.5 h-3.5 rotate-90" />,
 };
 
 const tooltipStyle = {
@@ -125,6 +126,31 @@ export function ChartRenderer({ config }: { config: ChartConfig }) {
     };
 
     const renderChart = useMemo(() => {
+        if (activeType === "stat") {
+            const firstRow = data[0] || {};
+            const firstKey = Object.keys(firstRow)[0];
+            const val = firstRow[config.y_axis] ?? (firstKey ? firstRow[firstKey] : "N/A");
+            const isNumber = typeof val === "number";
+            const formattedVal = isNumber
+                ? new Intl.NumberFormat('en-US', {
+                    style: val > 1000 ? 'currency' : 'decimal',
+                    currency: 'USD',
+                    maximumFractionDigits: 2
+                }).format(val)
+                : String(val);
+
+            return (
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-in zoom-in-95 duration-500">
+                    <div className="text-5xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-primary via-primary/80 to-accent animate-in slide-in-from-bottom-4 duration-700">
+                        {formattedVal}
+                    </div>
+                    <div className="text-muted-foreground font-medium mt-4 text-sm uppercase tracking-widest opacity-70">
+                        {config.y_label || config.title}
+                    </div>
+                </div>
+            );
+        }
+
         if (activeType === "table") {
             return (
                 <div className="overflow-x-auto max-h-80">
@@ -428,6 +454,12 @@ export function ChartRenderer({ config }: { config: ChartConfig }) {
                                     <div className="flex items-center gap-2">
                                         <Table2 className="w-3.5 h-3.5" />
                                         Table
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="stat">
+                                    <div className="flex items-center gap-2">
+                                        <BarChart3 className="w-3.5 h-3.5 rotate-90" />
+                                        Stat
                                     </div>
                                 </SelectItem>
                             </SelectContent>
