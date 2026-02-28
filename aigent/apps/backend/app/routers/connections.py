@@ -286,3 +286,75 @@ async def get_connection_schema(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch schema: {str(e)}"
         )
+
+
+# ── Ad-hoc SQL Execution ─────────────────────────────────────────
+
+from pydantic import BaseModel as _BaseModel
+
+class RunQueryRequest(_BaseModel):
+    sql: str
+
+class RunQueryResponse(_BaseModel):
+    columns: list[str]
+    rows: list[dict]
+    row_count: int
+    execution_time_ms: float | None = None
+
+import time as _time
+
+@router.post("/{connection_id}/run", response_model=RunQueryResponse)
+async def run_query(
+    connection_id: str,
+    payload: RunQueryRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+):
+    """Execute a read-only SQL query against a connection and return results."""
+    result = await db.execute(
+        select(DatabaseConnection).where(
+            DatabaseConnection.id == UUID(connection_id),
+            DatabaseConnection.company_id == current_user.company_id,
+        )
+    )
+    conn = result.scalar_one_or_none()
+    if not conn:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection not found")
+
+    # Safety: only allow SELECT
+    stripped = payload.sql.strip().lstrip(";").strip()
+    if not stripped.upper().startswith("SELECT"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only SELECT queries are allowed.",
+        )
+
+    host = encryption.decrypt(conn.host_encrypted)
+    database = encryption.decrypt(conn.database_encrypted)
+    username = encryption.decrypt(conn.username_encrypted)
+    password = encryption.decrypt(conn.password_encrypted)
+
+    t0 = _time.monotonic()
+    try:
+        res = await ConnectionManager.execute_query(
+            host=host,
+            port=conn.port,
+            database=database,
+            username=username,
+            password=password,
+            query=stripped,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    elapsed = (_time.monotonic() - t0) * 1000
+
+    return RunQueryResponse(
+        columns=res.get("columns", []),
+        rows=res.get("rows", []),
+        row_count=res.get("row_count", 0),
+        execution_time_ms=round(elapsed, 1),
+    )
+

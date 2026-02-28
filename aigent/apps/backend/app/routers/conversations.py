@@ -149,13 +149,19 @@ async def update_conversation(
             detail="Conversation not found"
         )
     
-    if data.title is not None:
-        conversation.title = data.title
-    if data.database_connection_id is not None:
-        conversation.database_connection_id = data.database_connection_id
-    
-    await db.flush()
-    return conversation
+    try:
+        if data.title is not None:
+            conversation.title = data.title
+        if data.database_connection_id is not None:
+            conversation.database_connection_id = data.database_connection_id
+        
+        await db.commit()  # Maybe commit was missing?
+        await db.refresh(conversation)
+        return conversation
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)

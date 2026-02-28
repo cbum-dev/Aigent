@@ -171,6 +171,15 @@ class ApiClient {
         });
     }
 
+    async updateConversation(token: string, conversationId: string, data: { title?: string }) {
+        return this.request<Conversation>(`/conversations/${conversationId}`, {
+            method: "PATCH",
+            token,
+            body: JSON.stringify(data),
+        });
+    }
+
+
     async sendMessage(token: string, conversationId: string, content: string) {
         return this.request<Message>(`/conversations/${conversationId}/messages`, {
             method: "POST",
@@ -206,6 +215,14 @@ class ApiClient {
     // Dashboard endpoints
     async getDashboardMetrics(token: string, connectionId: string, refresh = false) {
         return this.request<DashboardPayload>(`/connections/${connectionId}/dashboard${refresh ? '?refresh=true' : ''}`, { token });
+    }
+
+    async runQuery(token: string, connectionId: string, sql: string) {
+        return this.request<RunQueryResult>(`/connections/${connectionId}/run`, {
+            method: "POST",
+            token,
+            body: JSON.stringify({ sql }),
+        });
     }
 }
 
@@ -416,4 +433,11 @@ export interface DashboardPayload {
     summary: string;
     overview: StatCard[];
     widgets: DashboardWidget[];
+}
+
+export interface RunQueryResult {
+    columns: string[];
+    rows: Record<string, any>[];
+    row_count: number;
+    execution_time_ms?: number;
 }

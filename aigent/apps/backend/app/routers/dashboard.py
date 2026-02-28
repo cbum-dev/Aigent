@@ -1,16 +1,18 @@
 """
-Dashboard Router — AI-driven schema-aware analytics dashboard.
+Dashboard Router — AI-enhanced but fundamentally deterministic analytics dashboard.
 
-Flow:
-  1. Fetch schema from the connected database
-  2. Ask the LLM to analyze the schema and decide what is meaningful
-  3. Execute the LLM-suggested SQL queries
-  4. Return a structured payload of widgets tailored to THIS database
+Strategy:
+  1. Fetch schema + row counts (always works)
+  2. Auto-detect DB domain from table/column names (pattern matching)
+  3. Run domain-specific pre-defined queries
+  4. Summarize with one LLM call for human-readable titles only
+  5. Return clean, guaranteed-to-render widgets
 """
 
 import asyncio
 import json
 import logging
+import re
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
@@ -42,17 +44,16 @@ class StatCard(BaseModel):
 class Widget(BaseModel):
     id: str
     title: str
-    widget_type: str          # "stat", "bar", "line", "pie", "table"
+    widget_type: str           # "bar", "line", "pie", "table"
     data: list[dict] | None = None
     config: dict | None = None
-    stat: StatCard | None = None
 
 
 class DashboardPayload(BaseModel):
     connection_id: str
     connection_name: str
-    db_type: str              # "sales", "users", "finance", "general", etc.
-    summary: str              # one-line LLM-written summary of the database
+    db_type: str
+    summary: str
     overview: list[StatCard]
     widgets: list[Widget]
 
@@ -66,16 +67,12 @@ async def get_dashboard_metrics(
     db: DbSession,
     refresh: bool = False,
 ):
-    """Auto-generate a schema-aware analytics dashboard for a database connection."""
-
-    # Check cache (skip if refresh=True)
     cache_key = f"dashboard:{connection_id}"
     if not refresh:
         cached = await cache.get_json(cache_key)
         if cached is not None:
             return cached
 
-    # Fetch and decrypt connection
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.id == UUID(connection_id),
@@ -105,87 +102,86 @@ async def get_dashboard_metrics(
             connection_name=conn.name,
             db_type="empty",
             summary="This database appears to be empty.",
-            overview=[StatCard(label="Tables", value=0)],
+            overview=[StatCard(label="Tables", value=0, icon="table")],
             widgets=[],
         )
 
-    # ── 2. Get row counts for all tables ────────────────────────
+    # ── 2. Row counts for all tables (deterministic) ─────────────
     row_counts_raw = await asyncio.gather(*[
-        _safe_query(creds, f"SELECT COUNT(*) AS cnt FROM \"{t['schema']}\".\"{t['name']}\"")
+        _safe_query(creds, f"SELECT COUNT(*) AS _cnt FROM {_quote(t['schema'], t['name'])}")
         for t in tables
     ])
     table_rows: dict[str, int] = {}
     for t, res in zip(tables, row_counts_raw):
-        table_rows[t["name"]] = res[0]["cnt"] if res else 0
+        table_rows[t["name"]] = int(res[0]["_cnt"]) if res else 0
 
     total_rows = sum(table_rows.values())
 
-    # ── 3. Build compact schema summary for the LLM ─────────────
-    schema_text = _build_schema_text(tables, table_rows)
+    # ── 3. Detect DB domain by pattern matching ──────────────────
+    all_names = " ".join(t["name"] for t in tables)
+    all_col_names = " ".join(
+        c["name"]
+        for t in tables
+        for c in t.get("columns", [])
+    )
+    combined = (all_names + " " + all_col_names).lower()
 
-    # ── 4. Ask the LLM to plan the dashboard ────────────────────
-    plan = await _ask_llm_for_dashboard_plan(schema_text, conn.name)
-    db_type = plan.get("db_type", "general")
-    summary = plan.get("summary", f"Database: {database}")
-    widget_plans: list[dict] = plan.get("widgets", [])
+    db_type = _detect_domain(combined)
 
-    # ── 5. Execute widget queries in parallel ────────────────────
-    tasks = []
-    valid_plans = []
-    for wp in widget_plans:
-        sql = wp.get("sql", "").strip()
-        if sql:
-            tasks.append(_safe_query(creds, sql))
-            valid_plans.append(wp)
+    # ── 4. Build widgets based on domain ────────────────────────
+    # Pick the top 3 tables by row count
+    sorted_tables = sorted(table_rows.items(), key=lambda x: x[1], reverse=True)
+    top_table_names = [n for n, _ in sorted_tables if _ > 0][:3]
+    top_tables_info = {t["name"]: t for t in tables}
 
-    results = await asyncio.gather(*tasks) if tasks else []
-
-    # ── 6. Assemble widgets ──────────────────────────────────────
     widgets: list[Widget] = []
-    for wp, rows in zip(valid_plans, results):
-        if not rows:
-            continue
-        widget = Widget(
-            id=wp.get("id", f"w_{len(widgets)}"),
-            title=wp.get("title", "Untitled"),
-            widget_type=wp.get("type", "table"),
-            data=rows,
-            config=wp.get("config", {}),
-        )
-        widgets.append(widget)
-
-    # ── 7. Build overview stat cards ─────────────────────────────
-    overview_cards = plan.get("overview_stats", [])
-    overview_tasks = []
-    valid_overview = []
-    for oc in overview_cards:
-        sql = oc.get("sql", "").strip()
-        if sql:
-            overview_tasks.append(_safe_query(creds, sql))
-            valid_overview.append(oc)
-
-    overview_results = await asyncio.gather(*overview_tasks) if overview_tasks else []
-
     overview: list[StatCard] = []
-    for oc, rows in zip(valid_overview, overview_results):
-        if rows:
-            raw_val = list(rows[0].values())[0] if rows[0] else None
-            val = _format_value(raw_val)
-        else:
-            val = "N/A"
+
+    # Always: stat card for each non-empty table row count
+    for tname, cnt in sorted_tables[:4]:
         overview.append(StatCard(
-            label=oc.get("label", "Metric"),
-            value=val,
-            subtitle=oc.get("subtitle"),
-            icon=oc.get("icon", "database"),
+            label=_humanize(tname) + " Count",
+            value=_fmt_num(cnt),
+            icon="rows",
         ))
 
-    # Fallback overview if LLM returned none
-    if not overview:
-        overview = [
-            StatCard(label="Tables", value=len(tables), icon="table"),
-            StatCard(label="Total Rows", value=_format_number(total_rows), icon="rows"),
-        ]
+    # Domain-specific widgets
+    domain_widgets = await _build_domain_widgets(creds, tables, table_rows, db_type, top_table_names, top_tables_info)
+    widgets.extend(domain_widgets)
+
+    # Fallback: if no domain widgets, at least show a row counts bar chart
+    if not widgets:
+        bar_data = [{"table": n, "rows": c} for n, c in sorted_tables if c > 0]
+        if bar_data:
+            widgets.append(Widget(
+                id="row_counts",
+                title="Records per Table",
+                widget_type="bar",
+                data=bar_data,
+                config={"x_key": "table", "y_key": "rows", "color_each": True},
+            ))
+
+        # For each table, show a sample
+        for tname in top_table_names[:2]:
+            t_info = top_tables_info.get(tname)
+            if not t_info:
+                continue
+            rows = await _safe_query(creds, f"SELECT * FROM {_quote(t_info['schema'], tname)} LIMIT 10")
+            if rows:
+                widgets.append(Widget(
+                    id=f"sample_{tname}",
+                    title=f"{_humanize(tname)} — Sample Data",
+                    widget_type="table",
+                    data=rows,
+                    config={},
+                ))
+
+    # ── 5. LLM generates the summary sentence ───────────────────
+    schema_brief = "; ".join(
+        f"{t['name']}({', '.join(c['name'] for c in t.get('columns', [])[:5])})"
+        for t in tables[:6]
+    )
+    summary = await _llm_summary(conn.name, db_type, schema_brief)
 
     payload = DashboardPayload(
         connection_id=connection_id,
@@ -200,136 +196,383 @@ async def get_dashboard_metrics(
     return payload
 
 
-# ── LLM Dashboard Planner ────────────────────────────────────────
+# ── Domain Detection ─────────────────────────────────────────────
 
-async def _ask_llm_for_dashboard_plan(schema_text: str, db_name: str) -> dict:
-    """
-    Ask the LLM to analyze the schema and return a JSON plan for the dashboard.
-    The plan includes: db_type, summary, overview_stats (with SQL), widgets (with SQL).
-    """
-    llm = get_llm(temperature=0.0)
-
-    system_prompt = """You are a data analytics expert. Given a database schema, you will design a meaningful, context-specific analytics dashboard.
-
-Your job:
-1. Classify the database type (e.g., "sales", "users", "inventory", "finance", "healthcare", "ecommerce", "blog", "general")
-2. Write a ONE sentence summary of what this database is about
-3. Plan 2-4 overview stat cards (key single metrics with SQL queries)
-4. Plan 4-8 dashboard widgets (charts and tables) using meaningful SQL queries
-
-RULES:
-- ONLY use SELECT statements. Never DDL or DML.
-- Return raw numeric values, NO formatting in SQL (no TO_CHAR, no currency symbols).
-- Use actual column and table names from the schema.
-- Make the dashboard SPECIFIC to this database's domain. 
-  - Sales DB → revenue, top products, orders by status, monthly trends
-  - Users DB → user count, age distribution, signup trend, top cities
-  - Finance DB → account balances, transaction volume, income vs expense
-  - Blog DB → post count, views, top authors, posts per category
-  - Inventory DB → stock levels, low stock items, top categories
-  - General DB → row counts, data completeness
-- ALWAYS include LIMIT clauses (max 50 rows per widget)
-- Widget types: "bar", "pie", "line", "table"
-- For bar and line charts: config must have "x_key" and "y_key"
-- For pie charts: config must have "name_key" and "value_key"
-- For tables: config can have "columns" array
-
-Return ONLY valid JSON, no markdown, no explanation:
-{
-  "db_type": "sales",
-  "summary": "E-commerce platform with orders, products, and customer data",
-  "overview_stats": [
-    {
-      "label": "Total Revenue",
-      "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'completed'",
-      "icon": "dollar",
-      "subtitle": "All-time completed orders"
+def _detect_domain(combined: str) -> str:
+    patterns = {
+        "sales": ["order", "invoice", "sale", "revenue", "customer", "payment", "product", "cart", "checkout"],
+        "ecommerce": ["cart", "checkout", "product", "category", "inventory", "shipping", "sku"],
+        "users": ["user", "profile", "account", "member", "subscriber", "role", "permission"],
+        "finance": ["transaction", "account", "balance", "ledger", "expense", "income", "budget", "credit", "debit"],
+        "healthcare": ["patient", "doctor", "appointment", "diagnosis", "prescription", "hospital", "clinic"],
+        "analytics": ["event", "session", "pageview", "click", "conversion", "funnel", "traffic"],
+        "content": ["post", "article", "comment", "author", "tag", "category", "blog", "story", "media", "project"],
+        "inventory": ["stock", "warehouse", "supplier", "sku", "quantity", "shipment"],
+        "hr": ["employee", "department", "salary", "leave", "attendance", "payroll"],
     }
-  ],
-  "widgets": [
-    {
-      "id": "monthly_revenue",
-      "title": "Monthly Revenue Trend",
-      "type": "line",
-      "sql": "SELECT DATE_TRUNC('month', order_date)::date AS month, SUM(total_amount) AS revenue FROM orders WHERE status = 'completed' GROUP BY 1 ORDER BY 1 DESC LIMIT 12",
-      "config": {"x_key": "month", "y_key": "revenue", "x_label": "Month", "y_label": "Revenue ($)"}
-    }
-  ]
-}"""
+    scores: dict[str, int] = {}
+    for domain, keywords in patterns.items():
+        scores[domain] = sum(1 for kw in keywords if kw in combined)
+    best = max(scores, key=lambda x: scores[x])
+    return best if scores[best] > 0 else "general"
 
-    human_prompt = f"""DATABASE NAME: {db_name}
 
-SCHEMA:
-{schema_text}
+# ── Domain-Specific Widgets ──────────────────────────────────────
 
-Design a smart, context-specific dashboard for this database."""
+async def _build_domain_widgets(
+    creds: dict,
+    tables: list[dict],
+    table_rows: dict[str, int],
+    db_type: str,
+    top_names: list[str],
+    info_map: dict[str, dict],
+) -> list[Widget]:
+    widgets: list[Widget] = []
+    tbl = {t["name"]: t for t in tables}
 
+    # Helper: find a table whose name contains substring
+    def find_table(*substrings: str) -> dict | None:
+        for sub in substrings:
+            for name, t in tbl.items():
+                if sub in name.lower():
+                    return t
+        return None
+
+    # Helper: find column in table whose name contains substring
+    def find_col(t: dict, *subs: str) -> str | None:
+        for sub in subs:
+            for c in t.get("columns", []):
+                if sub in c["name"].lower():
+                    return c["name"]
+        return None
+
+    if db_type in ("sales", "ecommerce"):
+        orders_t = find_table("order")
+        products_t = find_table("product")
+
+        if orders_t:
+            fn = _quote(orders_t["schema"], orders_t["name"])
+            date_col = find_col(orders_t, "date", "created", "time", "at")
+            amount_col = find_col(orders_t, "amount", "total", "price", "revenue", "value")
+            status_col = find_col(orders_t, "status")
+
+            # Monthly revenue trend
+            if date_col and amount_col:
+                rows = await _safe_query(creds,
+                    f"SELECT DATE_TRUNC('month', \"{date_col}\")::date AS month, "
+                    f"ROUND(SUM(\"{amount_col}\")::numeric, 2) AS revenue "
+                    f"FROM {fn} GROUP BY 1 ORDER BY 1 DESC LIMIT 12")
+                if rows and len(rows) >= 2:
+                    widgets.append(Widget(
+                        id="monthly_revenue",
+                        title="Monthly Revenue Trend",
+                        widget_type="line",
+                        data=list(reversed(rows)),
+                        config={"x_key": "month", "y_key": "revenue"},
+                    ))
+
+            # Orders by status
+            if status_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{status_col}\" AS status, COUNT(*) AS count "
+                    f"FROM {fn} GROUP BY 1 ORDER BY 2 DESC")
+                if rows:
+                    widgets.append(Widget(
+                        id="orders_by_status",
+                        title="Orders by Status",
+                        widget_type="pie",
+                        data=rows,
+                        config={"name_key": "status", "value_key": "count"},
+                    ))
+
+        if products_t:
+            fn = _quote(products_t["schema"], products_t["name"])
+            cat_col = find_col(products_t, "category", "type", "group")
+            price_col = find_col(products_t, "price", "amount", "cost")
+            name_col = find_col(products_t, "name", "title", "product")
+
+            if cat_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{cat_col}\" AS category, COUNT(*) AS count "
+                    f"FROM {fn} WHERE \"{cat_col}\" IS NOT NULL "
+                    f"GROUP BY 1 ORDER BY 2 DESC LIMIT 10")
+                if rows:
+                    widgets.append(Widget(
+                        id="products_by_category",
+                        title="Products by Category",
+                        widget_type="bar",
+                        data=rows,
+                        config={"x_key": "category", "y_key": "count", "color_each": True},
+                    ))
+
+            if price_col and name_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{name_col}\" AS product, \"{price_col}\" AS price "
+                    f"FROM {fn} WHERE \"{price_col}\" IS NOT NULL "
+                    f"ORDER BY \"{price_col}\" DESC LIMIT 10")
+                if rows:
+                    widgets.append(Widget(
+                        id="top_products_by_price",
+                        title="Top Products by Price",
+                        widget_type="bar",
+                        data=rows,
+                        config={"x_key": "product", "y_key": "price"},
+                    ))
+
+    elif db_type == "users":
+        users_t = find_table("user", "member", "profile", "account")
+        if users_t:
+            fn = _quote(users_t["schema"], users_t["name"])
+            age_col = find_col(users_t, "age", "birth", "dob")
+            city_col = find_col(users_t, "city", "location", "region", "country", "state")
+            created_col = find_col(users_t, "created", "joined", "signup", "registered", "at")
+            role_col = find_col(users_t, "role", "type", "tier", "plan", "status")
+
+            if age_col:
+                rows = await _safe_query(creds,
+                    f"SELECT "
+                    f"CASE WHEN \"{age_col}\" < 18 THEN 'Under 18' "
+                    f"     WHEN \"{age_col}\" < 30 THEN '18-29' "
+                    f"     WHEN \"{age_col}\" < 45 THEN '30-44' "
+                    f"     WHEN \"{age_col}\" < 60 THEN '45-59' "
+                    f"     ELSE '60+' END AS age_group, "
+                    f"COUNT(*) AS count "
+                    f"FROM {fn} WHERE \"{age_col}\" IS NOT NULL "
+                    f"GROUP BY 1 ORDER BY MIN(\"{age_col}\")")
+                if rows:
+                    widgets.append(Widget(
+                        id="age_distribution",
+                        title="User Age Distribution",
+                        widget_type="bar",
+                        data=rows,
+                        config={"x_key": "age_group", "y_key": "count", "color_each": True},
+                    ))
+
+            if city_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{city_col}\" AS location, COUNT(*) AS users "
+                    f"FROM {fn} WHERE \"{city_col}\" IS NOT NULL "
+                    f"GROUP BY 1 ORDER BY 2 DESC LIMIT 10")
+                if rows:
+                    widgets.append(Widget(
+                        id="users_by_location",
+                        title=f"Users by {_humanize(city_col)}",
+                        widget_type="bar",
+                        data=rows,
+                        config={"x_key": "location", "y_key": "users", "color_each": True},
+                    ))
+
+            if role_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{role_col}\" AS segment, COUNT(*) AS count "
+                    f"FROM {fn} WHERE \"{role_col}\" IS NOT NULL "
+                    f"GROUP BY 1 ORDER BY 2 DESC LIMIT 8")
+                if rows:
+                    widgets.append(Widget(
+                        id="users_by_role",
+                        title=f"Users by {_humanize(role_col)}",
+                        widget_type="pie",
+                        data=rows,
+                        config={"name_key": "segment", "value_key": "count"},
+                    ))
+
+            if created_col:
+                rows = await _safe_query(creds,
+                    f"SELECT DATE_TRUNC('month', \"{created_col}\")::date AS month, COUNT(*) AS signups "
+                    f"FROM {fn} GROUP BY 1 ORDER BY 1 DESC LIMIT 12")
+                if rows and len(rows) >= 2:
+                    widgets.append(Widget(
+                        id="signup_trend",
+                        title="User Signup Trend",
+                        widget_type="line",
+                        data=list(reversed(rows)),
+                        config={"x_key": "month", "y_key": "signups"},
+                    ))
+
+            # Fallback: sample data table
+            if not widgets:
+                rows = await _safe_query(creds, f"SELECT * FROM {fn} LIMIT 20")
+                if rows:
+                    widgets.append(Widget(
+                        id="users_sample",
+                        title=f"{_humanize(users_t['name'])} — All Data",
+                        widget_type="table",
+                        data=rows,
+                        config={},
+                    ))
+
+    elif db_type == "content":
+        content_t = find_table("post", "article", "blog", "project", "media", "story", "content")
+        if content_t:
+            fn = _quote(content_t["schema"], content_t["name"])
+            cat_col = find_col(content_t, "category", "type", "status", "genre", "tag")
+            author_col = find_col(content_t, "author", "creator", "user", "owner")
+            date_col = find_col(content_t, "created", "published", "date", "at")
+            view_col = find_col(content_t, "view", "count", "like", "engagement")
+
+            if cat_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{cat_col}\" AS category, COUNT(*) AS count "
+                    f"FROM {fn} WHERE \"{cat_col}\" IS NOT NULL "
+                    f"GROUP BY 1 ORDER BY 2 DESC LIMIT 10")
+                if rows:
+                    widgets.append(Widget(
+                        id="content_by_category",
+                        title=f"{_humanize(content_t['name'])} by {_humanize(cat_col)}",
+                        widget_type="pie",
+                        data=rows,
+                        config={"name_key": "category", "value_key": "count"},
+                    ))
+
+            if author_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{author_col}\" AS author, COUNT(*) AS count "
+                    f"FROM {fn} WHERE \"{author_col}\" IS NOT NULL "
+                    f"GROUP BY 1 ORDER BY 2 DESC LIMIT 10")
+                if rows:
+                    widgets.append(Widget(
+                        id="by_author",
+                        title=f"{_humanize(content_t['name'])} by {_humanize(author_col)}",
+                        widget_type="bar",
+                        data=rows,
+                        config={"x_key": "author", "y_key": "count", "color_each": True},
+                    ))
+
+            if view_col:
+                name_col = find_col(content_t, "title", "name", "slug")
+                cols = f'"{name_col}", ' if name_col else ""
+                rows = await _safe_query(creds,
+                    f"SELECT {cols}\"{view_col}\" AS views "
+                    f"FROM {fn} WHERE \"{view_col}\" IS NOT NULL "
+                    f"ORDER BY \"{view_col}\" DESC LIMIT 10")
+                if rows:
+                    x = name_col or list(rows[0].keys())[0]
+                    widgets.append(Widget(
+                        id="top_by_views",
+                        title=f"Top {_humanize(content_t['name'])} by {_humanize(view_col)}",
+                        widget_type="bar",
+                        data=rows,
+                        config={"x_key": x, "y_key": "views"},
+                    ))
+
+            # Sample table
+            rows = await _safe_query(creds, f"SELECT * FROM {fn} LIMIT 10")
+            if rows:
+                widgets.append(Widget(
+                    id=f"sample_{content_t['name']}",
+                    title=f"{_humanize(content_t['name'])} — Recent Data",
+                    widget_type="table",
+                    data=rows,
+                    config={},
+                ))
+
+    elif db_type in ("analytics",):
+        event_t = find_table("event", "session", "pageview", "log", "click")
+        if event_t:
+            fn = _quote(event_t["schema"], event_t["name"])
+            event_col = find_col(event_t, "event", "action", "type", "name")
+            date_col = find_col(event_t, "created", "timestamp", "date", "time", "at")
+
+            if event_col:
+                rows = await _safe_query(creds,
+                    f"SELECT \"{event_col}\" AS event_type, COUNT(*) AS count "
+                    f"FROM {fn} WHERE \"{event_col}\" IS NOT NULL "
+                    f"GROUP BY 1 ORDER BY 2 DESC LIMIT 10")
+                if rows:
+                    widgets.append(Widget(
+                        id="events_by_type",
+                        title="Events by Type",
+                        widget_type="bar",
+                        data=rows,
+                        config={"x_key": "event_type", "y_key": "count", "color_each": True},
+                    ))
+
+            if date_col:
+                rows = await _safe_query(creds,
+                    f"SELECT DATE_TRUNC('day', \"{date_col}\")::date AS day, COUNT(*) AS events "
+                    f"FROM {fn} GROUP BY 1 ORDER BY 1 DESC LIMIT 30")
+                if rows and len(rows) >= 2:
+                    widgets.append(Widget(
+                        id="events_over_time",
+                        title="Events Over Time",
+                        widget_type="line",
+                        data=list(reversed(rows)),
+                        config={"x_key": "day", "y_key": "events"},
+                    ))
+
+    # ── Universal: show sample table for top 2 non-empty tables if we have few widgets
+    if len(widgets) < 2:
+        for tname in top_names[:3]:
+            t_info = info_map.get(tname)
+            if not t_info:
+                continue
+            fn = _quote(t_info["schema"], tname)
+            rows = await _safe_query(creds, f"SELECT * FROM {fn} LIMIT 15")
+            if rows:
+                widgets.append(Widget(
+                    id=f"sample_{tname}",
+                    title=f"{_humanize(tname)} — Data",
+                    widget_type="table",
+                    data=rows,
+                    config={},
+                ))
+            if len(widgets) >= 3:
+                break
+
+    return widgets
+
+
+# ── LLM Summary ──────────────────────────────────────────────────
+
+async def _llm_summary(db_name: str, db_type: str, schema_brief: str) -> str:
     try:
-        response = await llm.ainvoke([
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=human_prompt),
+        llm = get_llm(temperature=0.0)
+        resp = await llm.ainvoke([
+            SystemMessage(content="You are a database analyst. Write ONE concise sentence (max 20 words) describing what this database is used for."),
+            HumanMessage(content=f"Database: {db_name}\nType: {db_type}\nTables: {schema_brief}"),
         ])
-        text = response.content.strip()
-        # Strip markdown fences if any
-        if text.startswith("```"):
-            lines = text.split("\n")
-            lines = [l for l in lines if not l.strip().startswith("```")]
-            text = "\n".join(lines).strip()
-        return json.loads(text)
-    except Exception as e:
-        logger.warning("LLM dashboard plan failed: %s", e)
-        return {
-            "db_type": "general",
-            "summary": f"Database: {db_name}",
-            "overview_stats": [],
-            "widgets": [],
-        }
+        return resp.content.strip().strip('"')
+    except Exception:
+        return f"A {db_type} database with {schema_brief.count(';') + 1} tables."
 
 
 # ── Helpers ─────────────────────────────────────────────────────
 
-def _build_schema_text(tables: list[dict], row_counts: dict[str, int]) -> str:
-    """Build a compact schema description with row counts."""
-    parts = []
-    for t in tables:
-        cols = ", ".join(
-            f"{c['name']} ({c['type']})" for c in t.get("columns", [])
-        )
-        rows = row_counts.get(t["name"], 0)
-        parts.append(f"  {t['full_name']} ({rows:,} rows): {cols}")
-    return "\n".join(parts)
+def _quote(schema: str, name: str) -> str:
+    return f'"{schema}"."{name}"'
 
 
 async def _safe_query(creds: dict, query: str) -> list[dict]:
-    """Execute a query and return rows as dicts. Never raises."""
     try:
         result = await ConnectionManager.execute_query(**creds, query=query)
         return result.get("rows", [])
     except Exception as e:
-        logger.warning("Dashboard query failed: %s | %s", query[:80], e)
+        logger.warning("Dashboard query failed [%.80s]: %s", query, e)
         return []
 
 
-def _format_value(val) -> str:
-    """Smart-format a scalar value."""
-    if val is None:
-        return "N/A"
-    if isinstance(val, float):
-        if val >= 1_000_000:
-            return f"${val / 1_000_000:.1f}M"
-        if val >= 1_000:
-            return f"${val / 1_000:.1f}K"
-        return f"${val:,.2f}"
-    if isinstance(val, int):
-        if val >= 1_000_000:
-            return f"{val / 1_000_000:.1f}M"
-        if val >= 1_000:
-            return f"{val / 1_000:.1f}K"
-        return str(val)
-    return str(val)
+def _detect_domain(combined: str) -> str:
+    patterns = {
+        "sales":     ["order", "invoice", "sale", "revenue", "customer", "payment", "product", "cart"],
+        "ecommerce": ["cart", "checkout", "product", "category", "inventory", "shipping", "sku"],
+        "users":     ["user", "profile", "account", "member", "subscriber"],
+        "finance":   ["transaction", "account", "balance", "ledger", "expense", "income", "budget"],
+        "healthcare":["patient", "doctor", "appointment", "diagnosis", "prescription"],
+        "analytics": ["event", "session", "pageview", "click", "conversion", "funnel", "traffic"],
+        "content":   ["post", "article", "comment", "author", "tag", "blog", "media", "project", "story"],
+        "inventory": ["stock", "warehouse", "supplier", "sku", "quantity"],
+        "hr":        ["employee", "department", "salary", "leave", "attendance"],
+    }
+    scores = {d: sum(1 for kw in kws if kw in combined) for d, kws in patterns.items()}
+    best = max(scores, key=lambda x: scores[x])
+    return best if scores[best] > 0 else "general"
 
 
-def _format_number(n: int) -> str:
+def _humanize(s: str) -> str:
+    return re.sub(r"[_\-]+", " ", s).title()
+
+
+def _fmt_num(n: int) -> str:
     if n >= 1_000_000:
         return f"{n / 1_000_000:.1f}M"
     if n >= 1_000:
