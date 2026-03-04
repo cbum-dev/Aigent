@@ -176,12 +176,13 @@ async def get_dashboard_metrics(
                     config={},
                 ))
 
-    # ── 5. LLM generates the summary sentence ───────────────────
+    # ── 5. AI generates the summary sentence and custom widgets ───
     schema_brief = "; ".join(
         f"{t['name']}({', '.join(c['name'] for c in t.get('columns', [])[:5])})"
         for t in tables[:6]
     )
-    summary = await _llm_summary(conn.name, db_type, schema_brief)
+    summary, ai_widgets = await _agent_enrich_dashboard(conn.name, db_type, schema_brief, creds)
+    widgets.extend(ai_widgets)
 
     payload = DashboardPayload(
         connection_id=connection_id,
@@ -522,18 +523,58 @@ async def _build_domain_widgets(
     return widgets
 
 
-# ── LLM Summary ──────────────────────────────────────────────────
+# ── AI Dashboard Enrichment ──────────────────────────────────────
 
-async def _llm_summary(db_name: str, db_type: str, schema_brief: str) -> str:
+async def _agent_enrich_dashboard(db_name: str, db_type: str, schema_brief: str, creds: dict) -> tuple[str, list[Widget]]:
+    summary = f"A {db_type} database with {schema_brief.count(';') + 1} tables."
+    ai_widgets: list[Widget] = []
+    
     try:
-        llm = get_llm(temperature=0.0)
-        resp = await llm.ainvoke([
-            SystemMessage(content="You are a database analyst. Write ONE concise sentence (max 20 words) describing what this database is used for."),
-            HumanMessage(content=f"Database: {db_name}\nType: {db_type}\nTables: {schema_brief}"),
-        ])
-        return resp.content.strip().strip('"')
-    except Exception:
-        return f"A {db_type} database with {schema_brief.count(';') + 1} tables."
+        llm = get_llm(temperature=0.0).bind(response_format={"type": "json_object"})
+        prompt = f"""You are an expert data analyst. Based on this database schema, generate a concise summary and 2 advanced, insightful SQL queries that return aggregated data suitable for charts (e.g. trends, top groupings).
+
+Database: {db_name}
+Type: {db_type}
+Schema: {schema_brief}
+
+Provide ONLY a valid JSON object with this exact structure:
+{{
+  "summary": "One concise sentence describing what this DB is about.",
+  "metrics": [
+    {{
+       "title": "Short descriptive title",
+       "sql_query": "SELECT ... FROM ... GROUP BY ... ORDER BY ... LIMIT 10",
+       "chart_type": "bar",
+       "x_key": "column1",
+       "y_key": "column2"
+    }}
+  ]
+}}
+
+PostgreSQL SQL rules:
+1. Always alias columns (e.g., AS total_revenue).
+2. Cast SUM/AVG to numeric: ROUND(SUM(amount)::numeric, 2).
+3. Do NOT use markdown code blocks, just pure JSON.
+"""
+        resp = await llm.ainvoke([HumanMessage(content=prompt)])
+        data = json.loads(resp.content)
+        
+        summary = data.get("summary", summary)
+        
+        for i, m in enumerate(data.get("metrics", [])):
+            rows = await _safe_query(creds, m["sql_query"])
+            if rows:
+                ai_widgets.append(Widget(
+                    id=f"ai_metric_{i}",
+                    title=f"✨ {m.get('title', 'AI Metric')}",
+                    widget_type=m.get("chart_type", "bar"),
+                    data=rows,
+                    config={"x_key": m.get("x_key"), "y_key": m.get("y_key"), "color_each": True}
+                ))
+    except Exception as e:
+        logger.warning(f"AI enrichment failed: {e}")
+        
+    return summary, ai_widgets
 
 
 # ── Helpers ─────────────────────────────────────────────────────

@@ -48,10 +48,10 @@ const ICON_FOR: Record<string, React.ReactNode> = {
     database: <Database className="w-4 h-4" />,
 };
 const TOOLTIP_STYLE = {
-    background: "hsl(var(--card))", border: "1px solid hsl(var(--border))",
-    borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))",
+    background: "var(--card)", border: "1px solid var(--border)",
+    borderRadius: 8, fontSize: 12, color: "var(--foreground)",
 };
-const TICK = { fontSize: 11, fill: "hsl(var(--muted-foreground))" };
+const TICK = { fontSize: 11, fill: "var(--muted-foreground)" };
 
 type Tab = "overview" | "sql" | "schema";
 
@@ -633,10 +633,10 @@ function BarW({ data, xKey, yKey, colorEach }: { data: Record<string, any>[]; xK
         <div className="w-full h-56">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 4, right: 8, bottom: 32, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} />
                     <XAxis dataKey={xKey} tick={TICK} tickLine={false} angle={-20} textAnchor="end" height={50} tickFormatter={v => fmtLabel(String(v))} />
                     <YAxis tick={TICK} tickLine={false} axisLine={false} tickFormatter={fmtTick} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} formatter={(v: any) => [fmtTick(v), yKey.replace(/_/g, " ")]} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--muted)", opacity: 0.3 }} formatter={(v: any) => [fmtTick(v), yKey.replace(/_/g, " ")]} />
                     <Bar dataKey={yKey} radius={[4, 4, 0, 0]} maxBarSize={52} animationDuration={600} fill={COLORS[0]}>
                         {colorEach && data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Bar>
@@ -657,7 +657,7 @@ function AreaW({ data, xKey, yKey }: { data: Record<string, any>[]; xKey: string
                             <stop offset="95%" stopColor={COLORS[0]} stopOpacity={0} />
                         </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.4} />
                     <XAxis dataKey={xKey} tick={TICK} tickLine={false} tickFormatter={v => fmtLabel(String(v))} />
                     <YAxis tick={TICK} tickLine={false} axisLine={false} tickFormatter={fmtTick} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [fmtTick(v), yKey.replace(/_/g, " ")]} />

@@ -16,7 +16,7 @@ Faker.seed(42)  # Reproducible data
 # Database connection
 DB_CONFIG = {
     'host': 'localhost',
-    'database': 'analytics_dev1',
+    'database': 'new',
     'user': 'postgres',
     'password': 'postgres',
     'port': 5432
