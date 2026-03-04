@@ -686,7 +686,8 @@ function PieW({ data, nameKey, valueKey }: { data: Record<string, any>[]; nameKe
 }
 
 function TableW({ data }: { data: Record<string, any>[] }) {
-    const columns = data.length > 0 ? Object.keys(data[0]) : [];
+    const first = data[0];
+    const columns = first ? Object.keys(first) : [];
     return (
         <div className="overflow-x-auto rounded-lg border border-border/40 max-h-64">
             <table className="w-full text-xs">

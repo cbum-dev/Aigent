@@ -420,7 +420,7 @@ export interface StatCard {
 export interface DashboardWidget {
     id: string;
     title: string;
-    widget_type: "stat" | "bar" | "pie" | "line" | "table";
+    widget_type: "stat" | "bar" | "pie" | "line" | "table" | "area";
     data?: Record<string, any>[];
     config?: Record<string, any>;
     stat?: StatCard;
