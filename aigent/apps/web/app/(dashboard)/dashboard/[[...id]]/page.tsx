@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import {
     Send, Sparkles, Database, Loader2, Plus, MessageSquare,
     ArrowRight, AlertCircle, PanelLeft, Pencil, Trash2, Check, X,
-    MoreHorizontal,
+    MoreHorizontal, Pause, Play,
 } from "lucide-react";
 import { useAuthStore } from "@/hooks/use-auth";
 import { useChat } from "@/hooks/use-chat";
@@ -41,7 +41,7 @@ export default function DashboardPage() {
     const bottomRef = useRef<HTMLDivElement>(null);
     const renameInputRef = useRef<HTMLInputElement>(null);
 
-    const { messages, thoughts, isTyping, sendMessage } = useChat(activeConversationId);
+    const { messages, thoughts, isTyping, sendMessage, isPaused, setIsPaused } = useChat(activeConversationId);
 
     const handleSaveReport = async (message: Message) => {
         if (!accessToken || !activeConversationId) return;
@@ -288,6 +288,34 @@ export default function DashboardPage() {
                                 </button>
                             </div>
                         )}
+
+                        <div className="flex items-center gap-2 ml-4">
+                            {activeConversationId && viewMode === "chat" && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsPaused(!isPaused)}
+                                    className={cn(
+                                        "h-8 px-3 gap-1.5 text-xs font-medium transition-all",
+                                        isPaused
+                                            ? "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20"
+                                            : "hover:bg-muted"
+                                    )}
+                                >
+                                    {isPaused ? (
+                                        <>
+                                            <Play className="w-3.5 h-3.5" />
+                                            Resume Chat
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Pause className="w-3.5 h-3.5" />
+                                            Pause Chat
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                        </div>
                     </header>
 
                     <div className="flex-1 overflow-y-scroll scroll-smooth scrollbar scrollbar-thumb-primary/90 scrollbar-track-primary/10">
@@ -357,7 +385,7 @@ export default function DashboardPage() {
                         <div className="max-w-4xl mx-auto relative">
                             <div className={cn(
                                 "relative flex items-center gap-2 rounded-2xl bg-muted/20 border border-border/60 p-1.5 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 focus-within:bg-background shadow-sm hover:border-primary/30",
-                                isTyping && "opacity-80 pointer-events-none"
+                                (isTyping || isPaused) && "opacity-80 pointer-events-none"
                             )}>
                                 <div className="pl-3">
                                     <Sparkles className={cn("w-5 h-5 text-muted-foreground", inputValue && "text-primary")} />
@@ -366,9 +394,9 @@ export default function DashboardPage() {
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder={!activeConversationId ? "Ask your data a question..." : "Ask a follow-up question..."}
+                                    placeholder={isPaused ? "Chat is paused" : (!activeConversationId ? "Ask your data a question..." : "Ask a follow-up question...")}
                                     className="border-0 bg-transparent shadow-none focus-visible:ring-0 h-12 text-base px-2 placeholder:text-muted-foreground/60"
-                                    disabled={isTyping && !!activeConversationId}
+                                    disabled={isPaused || (isTyping && !!activeConversationId)}
                                 />
                                 <Button
                                     onClick={() => {

@@ -22,6 +22,7 @@ export function useChat(conversationId: string | null) {
     const [isTyping, setIsTyping] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isPaused, setIsPaused] = useState(false);
 
     const wsRef = useRef<WebSocket | null>(null);
 
@@ -56,6 +57,7 @@ export function useChat(conversationId: string | null) {
 
         ws.onmessage = (event) => {
             try {
+                if (isPaused) return;
                 const data = JSON.parse(event.data) as WsEvent;
                 // console.log("WS Message:", data);
 
@@ -108,9 +110,10 @@ export function useChat(conversationId: string | null) {
                 ws.close();
             }
         };
-    }, [accessToken, conversationId]);
+    }, [accessToken, conversationId, isPaused]);
 
     const sendMessage = useCallback((content: string) => {
+        if (isPaused) return;
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             // Optimistically add user message
             if (conversationId) {
@@ -131,15 +134,17 @@ export function useChat(conversationId: string | null) {
             console.error("WS not connected");
             setError("Not connected to chat server");
         }
-    }, [conversationId]);
+    }, [conversationId, isPaused]);
 
     return {
         messages,
         thoughts,
         isTyping,
         isConnected,
+        isPaused,
         error,
         sendMessage,
+        setIsPaused,
         setMessages, // exposed for resetting if needed
     };
 }
