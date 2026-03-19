@@ -46,7 +46,8 @@ async def insight_node(state: AgentState) -> dict:
         default=str,
     )
 
-    llm = get_llm(temperature=0.3)  # slightly more creative for explanations
+    # ── Explain the data in plain language ─────────────────────
+    llm = get_llm(temperature=0.3, api_key=state.get("user_api_key"))  # slightly more creative for explanations
 
     system_prompt = (
         "You are a business analyst. Given query results, provide a clear, "

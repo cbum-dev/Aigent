@@ -41,6 +41,7 @@ class AgentState(TypedDict, total=False):
     question: str               # the user's natural-language question
     company_id: str             # tenant isolation
     connection_id: str          # which DB connection to use
+    user_api_key: str | None    # custom Gemini API key (optional)
 
     # ── Schema context (set by Query Planner) ────────────────────
     schema_info: dict[str, Any]           # full schema dump

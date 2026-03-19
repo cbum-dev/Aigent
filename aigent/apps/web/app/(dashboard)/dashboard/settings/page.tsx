@@ -28,11 +28,15 @@ export default function SettingsPage() {
 
     const [profileData, setProfileData] = useState({
         full_name: "",
+        gemini_api_key: "",
     });
 
     useEffect(() => {
         if (user) {
-            setProfileData({ full_name: user.full_name });
+            setProfileData({ 
+                full_name: user.full_name,
+                gemini_api_key: "", // Don't pre-fill the actual key from the object for security
+            });
         }
     }, [user]);
 
@@ -127,6 +131,31 @@ export default function SettingsPage() {
                                 <Input value={user?.email || ""} disabled />
                                 <p className="text-xs text-muted-foreground">
                                     Email cannot be changed
+                                </p>
+                            </div>
+
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    Gemini API Key (Optional)
+                                    {user?.has_gemini_api_key && (
+                                        <span className="text-[10px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded border border-green-500/20">
+                                            Currently Set
+                                        </span>
+                                    )}
+                                </Label>
+                                <Input
+                                    type="password"
+                                    autoComplete="off"
+                                    placeholder={user?.has_gemini_api_key ? "••••••••••••••••" : "Paste your API key here"}
+                                    value={profileData.gemini_api_key}
+                                    onChange={(e) =>
+                                        setProfileData({ ...profileData, gemini_api_key: e.target.value })
+                                    }
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    If provided, this key will be used for AI insights when the system quota is reached.
                                 </p>
                             </div>
 

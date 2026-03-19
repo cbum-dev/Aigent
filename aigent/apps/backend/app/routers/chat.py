@@ -104,11 +104,21 @@ async def websocket_endpoint(
             full_response_content = ""
             final_metadata = {}
 
+            user_api_key = None
+            if user.gemini_api_key_encrypted:
+                try:
+                    from app.services.encryption import get_encryption_service
+                    enc = get_encryption_service()
+                    user_api_key = enc.decrypt(user.gemini_api_key_encrypted)
+                except:
+                    pass
+
             async for event_json in chat_service.stream_agent_response(
                 conversation_id=conversation_id,
                 question=user_msg_content,
                 connection_id=conversation.database_connection_id,
-                company_id=user.company_id
+                company_id=user.company_id,
+                user_api_key=user_api_key
             ):
                 await websocket.send_text(event_json)
                 

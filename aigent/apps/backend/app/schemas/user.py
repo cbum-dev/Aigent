@@ -21,6 +21,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=255)
     role: Optional[str] = None
     is_active: Optional[bool] = None
+    gemini_api_key: Optional[str] = Field(None, max_length=255)
 
 
 class UserResponse(UserBase):
@@ -29,6 +30,7 @@ class UserResponse(UserBase):
     company_id: UUID
     role: str
     is_active: bool
+    has_gemini_api_key: bool = False
     created_at: datetime
     
     class Config:

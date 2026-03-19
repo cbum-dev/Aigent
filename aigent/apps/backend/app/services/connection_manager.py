@@ -77,7 +77,7 @@ class ConnectionManager:
                 schema_name = table["table_schema"]
                 
                 # Get columns for each table
-                columns = await conn.fetch("""
+                columns_data = await conn.fetch("""
                     SELECT 
                         column_name,
                         data_type,
@@ -88,19 +88,40 @@ class ConnectionManager:
                     ORDER BY ordinal_position
                 """, table_name, schema_name)
                 
+                table_columns = []
+                for col in columns_data:
+                    col_name = col["column_name"]
+                    data_type = col["data_type"]
+                    
+                    sample_values = []
+                    # Fetch sample values for text-like columns to provide data context
+                    if any(t in data_type.lower() for t in ["char", "text", "varchar"]):
+                        try:
+                            # Fetch up to 5 distinct non-null values
+                            samples = await conn.fetch(f"""
+                                SELECT DISTINCT "{col_name}"
+                                FROM "{schema_name}"."{table_name}"
+                                WHERE "{col_name}" IS NOT NULL
+                                LIMIT 5
+                            """)
+                            sample_values = [str(r[0]) for r in samples]
+                        except:
+                            # Fallback if query fails (e.g. permission issues or weird types)
+                            sample_values = []
+                    
+                    table_columns.append({
+                        "name": col_name,
+                        "type": data_type,
+                        "nullable": col["is_nullable"] == "YES",
+                        "default": col["column_default"],
+                        "sample_values": sample_values
+                    })
+
                 schema_info["tables"].append({
                     "name": table_name,
                     "schema": schema_name,
                     "full_name": f"{schema_name}.{table_name}",
-                    "columns": [
-                        {
-                            "name": col["column_name"],
-                            "type": col["data_type"],
-                            "nullable": col["is_nullable"] == "YES",
-                            "default": col["column_default"],
-                        }
-                        for col in columns
-                    ]
+                    "columns": table_columns
                 })
             
             return schema_info

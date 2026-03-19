@@ -19,7 +19,7 @@ class MessageResponse(MessageBase):
     id: UUID
     conversation_id: UUID
     role: str
-    message_metadata: Optional[dict[str, Any]] = Field(None, serialization_alias="metadata")
+    message_metadata: Optional[dict[str, Any]] = None
     created_at: datetime
     
     class Config:

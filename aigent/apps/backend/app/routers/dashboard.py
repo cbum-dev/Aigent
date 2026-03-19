@@ -176,12 +176,19 @@ async def get_dashboard_metrics(
                     config={},
                 ))
 
-    # ── 5. AI generates the summary sentence and custom widgets ───
     schema_brief = "; ".join(
         f"{t['name']}({', '.join(c['name'] for c in t.get('columns', [])[:5])})"
         for t in tables[:6]
     )
-    summary, ai_widgets = await _agent_enrich_dashboard(conn.name, db_type, schema_brief, creds)
+    
+    user_api_key = None
+    if current_user.gemini_api_key_encrypted:
+        try:
+            user_api_key = encryption.decrypt(current_user.gemini_api_key_encrypted)
+        except Exception as e:
+            logger.error(f"Failed to decrypt user API key: {e}")
+
+    summary, ai_widgets = await _agent_enrich_dashboard(conn.name, db_type, schema_brief, creds, user_api_key)
     widgets.extend(ai_widgets)
 
     payload = DashboardPayload(
@@ -525,12 +532,12 @@ async def _build_domain_widgets(
 
 # ── AI Dashboard Enrichment ──────────────────────────────────────
 
-async def _agent_enrich_dashboard(db_name: str, db_type: str, schema_brief: str, creds: dict) -> tuple[str, list[Widget]]:
+async def _agent_enrich_dashboard(db_name: str, db_type: str, schema_brief: str, creds: dict, api_key: str | None = None) -> tuple[str, list[Widget]]:
     summary = f"A {db_type} database with {schema_brief.count(';') + 1} tables."
     ai_widgets: list[Widget] = []
     
     try:
-        llm = get_llm(temperature=0.0).bind(response_format={"type": "json_object"})
+        llm = get_llm(temperature=0.0, api_key=api_key).bind(response_format={"type": "json_object"})
         prompt = f"""You are an expert data analyst. Based on this database schema, generate a concise summary and 2 advanced, insightful SQL queries that return aggregated data suitable for charts (e.g. trends, top groupings).
 
 Database: {db_name}
@@ -572,7 +579,11 @@ PostgreSQL SQL rules:
                     config={"x_key": m.get("x_key"), "y_key": m.get("y_key"), "color_each": True}
                 ))
     except Exception as e:
-        logger.warning(f"AI enrichment failed: {e}")
+        err_msg = str(e).lower()
+        if "429" in err_msg or "quota" in err_msg or "exhausted" in err_msg:
+            summary = "⚠️ AI Insights are currently unavailable due to API rate limits. Please check your Gemini API quota or provide your own key in Settings."
+        else:
+            logger.warning(f"AI enrichment failed: {e}")
         
     return summary, ai_widgets
 

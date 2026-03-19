@@ -43,7 +43,8 @@ async def visualization_node(state: AgentState) -> dict:
     sample_rows = rows[:10]  # send at most 10 rows
     data_preview = json.dumps({"columns": columns, "sample_rows": sample_rows}, default=str)
 
-    llm = get_llm(temperature=0.0)
+    # ── Analyze data for best visualization ──────────────────────
+    llm = get_llm(temperature=0.0, api_key=state.get("user_api_key"))
 
     system_prompt = (
         "You are a data visualization expert. Given SQL query results, decide the best chart type "

@@ -7,8 +7,10 @@ from app.models.company import Company
 from app.schemas.user import UserResponse, UserWithCompany, UserUpdate
 from app.schemas.auth import PasswordChangeRequest
 from app.services.auth import AuthService
+from app.services.encryption import get_encryption_service
 
 router = APIRouter(prefix="/users", tags=["users"])
+encryption = get_encryption_service()
 
 
 @router.get("/me", response_model=UserWithCompany)
@@ -27,6 +29,7 @@ async def get_current_user(current_user: CurrentUser, db: DbSession):
         full_name=current_user.full_name,
         role=current_user.role,
         is_active=current_user.is_active,
+        has_gemini_api_key=current_user.gemini_api_key_encrypted is not None,
         created_at=current_user.created_at,
         company_name=company.name,
         company_slug=company.slug
@@ -43,10 +46,19 @@ async def update_current_user(
     if data.full_name is not None:
         current_user.full_name = data.full_name
     
-
+    if data.gemini_api_key is not None:
+        if data.gemini_api_key == "":
+            current_user.gemini_api_key_encrypted = None
+        else:
+            current_user.gemini_api_key_encrypted = encryption.encrypt(data.gemini_api_key)
+    
     await db.flush()
     
-    return current_user
+    # Manually set the flag for the response object if needed, 
+    # but Pydantic's from_attributes might need extra help or we can just return a dict
+    resp = UserResponse.model_validate(current_user)
+    resp.has_gemini_api_key = current_user.gemini_api_key_encrypted is not None
+    return resp
 
 
 @router.post("/me/password")
@@ -137,5 +149,13 @@ async def update_user(
     if data.is_active is not None:
         user.is_active = data.is_active
     
+    if data.gemini_api_key is not None:
+        if data.gemini_api_key == "":
+            user.gemini_api_key_encrypted = None
+        else:
+            user.gemini_api_key_encrypted = encryption.encrypt(data.gemini_api_key)
+    
     await db.flush()
-    return user
+    resp = UserResponse.model_validate(user)
+    resp.has_gemini_api_key = user.gemini_api_key_encrypted is not None
+    return resp

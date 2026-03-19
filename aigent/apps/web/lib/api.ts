@@ -259,6 +259,8 @@ export interface User {
     full_name: string;
     role: string;
     is_active: boolean;
+    has_gemini_api_key?: boolean;
+    gemini_api_key?: string;
     created_at: string;
     company_name?: string;
     company_slug?: string;

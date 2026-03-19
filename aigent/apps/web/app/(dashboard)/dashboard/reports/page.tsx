@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
     FileText,
     Trash2,
@@ -228,8 +230,10 @@ export default function ReportsPage() {
                                                         <Lightbulb className="w-3 h-3" />
                                                         Insights
                                                     </div>
-                                                    <div className="p-4 text-sm text-muted-foreground whitespace-pre-wrap">
-                                                        {report.insights}
+                                                    <div className="p-4 prose prose-sm prose-neutral dark:prose-invert max-w-none">
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                            {report.insights}
+                                                        </ReactMarkdown>
                                                     </div>
                                                 </div>
                                             )}

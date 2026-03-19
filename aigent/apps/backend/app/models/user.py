@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import String, DateTime, ForeignKey, func
@@ -45,6 +46,7 @@ class User(Base):
         nullable=False
     )
     is_active: Mapped[bool] = mapped_column(default=True)
+    gemini_api_key_encrypted: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now()

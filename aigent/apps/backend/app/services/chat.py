@@ -91,6 +91,7 @@ class ChatService:
         question: str,
         connection_id: UUID,
         company_id: UUID,
+        user_api_key: str | None = None,
     ):
         """
         Generator that runs the agent pipeline and yields events.
@@ -110,6 +111,7 @@ class ChatService:
                 "question": question,
                 "company_id": str(company_id),
                 "connection_id": str(connection_id),
+                "user_api_key": user_api_key,
                 "db_host": creds["host"],
                 "db_port": creds["port"],
                 "db_name": creds["database"],

@@ -67,14 +67,20 @@ async def query_planner_node(state: AgentState) -> dict:
     # ── Build a compact schema description for the LLM ──────────
     schema_text_parts: list[str] = []
     for table in schema_info["tables"]:
-        cols = ", ".join(
-            f"{c['name']} ({c['type']})" for c in table["columns"]
-        )
+        col_parts = []
+        for c in table["columns"]:
+            col_info = f"{c['name']} ({c['type']})"
+            if c.get("sample_values"):
+                samples = ", ".join(f"'{v}'" for v in c["sample_values"])
+                col_info += f" [samples: {samples}]"
+            col_parts.append(col_info)
+        
+        cols = ", ".join(col_parts)
         schema_text_parts.append(f"  {table['full_name']}: {cols}")
     schema_text = "\n".join(schema_text_parts)
 
     # ── Ask the LLM ─────────────────────────────────────────────
-    llm = get_llm(temperature=0.0)
+    llm = get_llm(temperature=0.0, api_key=state.get("user_api_key"))
 
     system_prompt = (
         "You are a database analyst. Given a database schema and a user question, "
