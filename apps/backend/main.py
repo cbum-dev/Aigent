@@ -30,6 +30,16 @@ if settings.langsmith_api_key:
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
 
+    # Debug database URL
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(settings.database_url)
+        user_creds = f"{p.username}:***" if p.username else "none"
+        safe_url = f"{p.scheme}://{user_creds}@{p.hostname}:{p.port}{p.path}{p.params}{p.query}"
+        print(f"DEBUG: Using database URL: {safe_url}")
+    except Exception as e:
+        print(f"DEBUG: Could not parse database URL for logging: {e}")
+
     await init_db()
     await init_redis(settings.redis_url)
     yield

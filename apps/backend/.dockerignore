@@ -7,7 +7,7 @@ tests
 .git
 .gitignore
 README.md
-uv.lock
+# uv.lock removed to allow Docker build to access it
 # Exclude the frontend and other apps
 ../../apps/web
 ../../apps/docs

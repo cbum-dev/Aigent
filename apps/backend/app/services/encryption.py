@@ -8,15 +8,8 @@ class EncryptionService:
     """Service for encrypting/decrypting sensitive data like database credentials."""
     
     def __init__(self):
-        # In production, use a proper Fernet key from settings
-        # Generate with: Fernet.generate_key()
-        key = settings.encryption_key
-        if key == "your-fernet-key-change-in-production":
-            # Generate a temporary key for development
-            key = Fernet.generate_key()
-        elif isinstance(key, str):
-            key = key.encode()
-        
+        # The key is already validated/normalized in Settings
+        key = settings.encryption_key.encode()
         self._fernet = Fernet(key)
     
     def encrypt(self, data: str) -> str:
