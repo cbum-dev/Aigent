@@ -7,7 +7,9 @@ settings = get_settings()
 
 
 _connect_args = {}
-if "neon.tech" in settings.database_url or "amazonaws.com" in settings.database_url:
+_db_url = settings.database_url
+if any(host in _db_url for host in ["neon.tech", "amazonaws.com", "render.com", "supabase"]) or \
+   ("asyncpg" in _db_url and "localhost" not in _db_url and "127.0.0.1" not in _db_url):
 
     ssl_context = ssl_module.create_default_context()
     ssl_context.check_hostname = False

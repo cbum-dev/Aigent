@@ -27,11 +27,21 @@ class Settings(BaseSettings):
         elif v.startswith("postgresql://") and "+asyncpg" not in v:
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
             
-        # 2. Strip incompatible query parameters like sslmode
+        # 2. Strip ALL libpq-specific query parameters incompatible with asyncpg
         # asyncpg handles SSL via connect_args in database.py
-        import re
-        v = re.sub(r'([?&])sslmode=[^&]*(&|$)', r'\1', v)
-        v = v.rstrip('?&')
+        from urllib.parse import urlparse as _urlparse, parse_qs, urlencode, urlunparse
+        _INCOMPATIBLE_PARAMS = {
+            "sslmode", "channel_binding", "sslrootcert", "sslcert", "sslkey",
+            "sslpassword", "sslcrl", "sslcrldir", "sslsni", "requirepeer",
+            "krbsrvname", "gsslib", "target_session_attrs", "options",
+        }
+        _parsed = _urlparse(v)
+        if _parsed.query:
+            _params = parse_qs(_parsed.query, keep_blank_values=True)
+            for _bad in _INCOMPATIBLE_PARAMS:
+                _params.pop(_bad, None)
+            _clean_query = urlencode(_params, doseq=True)
+            v = urlunparse(_parsed._replace(query=_clean_query))
         
         # 3. Debug logging (masked)
         try:
