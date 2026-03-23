@@ -12,20 +12,20 @@ from typing import TypedDict, Any, Literal
 
 class AgentMessage(TypedDict):
     """A single reasoning / status message emitted by an agent node."""
-    agent: str          # e.g. "query_planner", "sql_writer"
-    type: str           # "thinking" | "result" | "error"
-    content: str        # human-readable description
+    agent: str          
+    type: str           
+    content: str        
 
 
 class ChartConfig(TypedDict, total=False):
     """Chart configuration produced by the Visualization agent."""
-    chart_type: str                    # "bar" | "line" | "pie" | "area" | "table"
+    chart_type: str                    
     title: str
     x_axis: str
     y_axis: str
     x_label: str
     y_label: str
-    datasets: list[dict[str, Any]]     # [{label, data, ...}]
+    datasets: list[dict[str, Any]]     
     labels: list[str]
 
 
@@ -37,34 +37,34 @@ class AgentState(TypedDict, total=False):
     populate the fields they care about.
     """
 
-    # ── Input ────────────────────────────────────────────────────
-    question: str               # the user's natural-language question
-    company_id: str             # tenant isolation
-    connection_id: str          # which DB connection to use
-    user_api_key: str | None    # custom Gemini API key (optional)
 
-    # ── Schema context (set by Query Planner) ────────────────────
-    schema_info: dict[str, Any]           # full schema dump
-    relevant_tables: list[dict[str, Any]] # subset relevant to the question
+    question: str               
+    company_id: str             
+    connection_id: str          
+    user_api_key: str | None    
 
-    # ── SQL (set by SQL Writer / Executor) ───────────────────────
+
+    schema_info: dict[str, Any]           
+    relevant_tables: list[dict[str, Any]] 
+
+
     sql_query: str
-    query_results: dict[str, Any]  # { columns, rows, row_count }
+    query_results: dict[str, Any]  
 
-    # ── Output (set by Visualization / Insight) ──────────────────
+
     chart_config: ChartConfig | None
-    insights: str                  # markdown explanation
+    insights: str                  
 
-    # ── Control flow ─────────────────────────────────────────────
+
     error: str | None
     retry_count: int
-    next_agent: str                # supervisor routing decision
-    final_response: str            # assembled answer
+    next_agent: str                
+    final_response: str            
 
-    # ── Observability ────────────────────────────────────────────
+
     agent_messages: list[AgentMessage]
 
-    # ── DB credentials (decrypted, never persisted) ──────────────
+
     db_host: str
     db_port: int
     db_name: str

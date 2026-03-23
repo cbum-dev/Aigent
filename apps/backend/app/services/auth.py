@@ -6,21 +6,21 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# Password hashing context
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
-    """Authentication service for password hashing and JWT tokens."""
+
     
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hash a plain text password."""
+
         return pwd_context.hash(password)
     
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a plain text password against its hash."""
+
         return pwd_context.verify(plain_password, hashed_password)
     
     @staticmethod
@@ -28,7 +28,7 @@ class AuthService:
         data: dict,
         expires_delta: Optional[timedelta] = None
     ) -> str:
-        """Create a JWT access token."""
+
         to_encode = data.copy()
         
         if expires_delta:
@@ -50,7 +50,7 @@ class AuthService:
         data: dict,
         expires_delta: Optional[timedelta] = None
     ) -> str:
-        """Create a JWT refresh token."""
+
         to_encode = data.copy()
         
         if expires_delta:
@@ -69,7 +69,7 @@ class AuthService:
     
     @staticmethod
     def decode_token(token: str) -> Optional[dict]:
-        """Decode and validate a JWT token."""
+
         try:
             payload = jwt.decode(
                 token,
@@ -81,7 +81,7 @@ class AuthService:
             return None
 
     def verify_token(self, token: str) -> dict:
-        """Verify a token and return the payload."""
+
         payload = self.decode_token(token)
         if payload is None:
             raise Exception("Invalid token")
@@ -89,7 +89,7 @@ class AuthService:
     
     @staticmethod
     def create_tokens(user_id: str, company_id: str, email: str) -> dict:
-        """Create both access and refresh tokens for a user."""
+
         token_data = {
             "sub": user_id,
             "company_id": company_id,
@@ -104,5 +104,5 @@ class AuthService:
 
 
 def get_auth_service() -> AuthService:
-    """Return an instance of the authentication service."""
+
     return AuthService()

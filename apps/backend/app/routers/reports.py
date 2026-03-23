@@ -12,7 +12,7 @@ from app.models.conversation import Conversation
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-# ── Schemas ────────────────────────────────────────────────────
+
 
 class CreateReportRequest(BaseModel):
     conversation_id: str
@@ -46,7 +46,7 @@ class ReportListResponse(BaseModel):
     total: int
 
 
-# ── Helpers ────────────────────────────────────────────────────
+
 
 def _to_response(report: Report) -> ReportResponse:
     return ReportResponse(
@@ -64,12 +64,12 @@ def _to_response(report: Report) -> ReportResponse:
     )
 
 
-# ── Endpoints ──────────────────────────────────────────────────
+
 
 @router.get("", response_model=ReportListResponse)
 async def list_reports(db: DbSession, user: CurrentUser):
     """List all reports for conversations owned by the current user."""
-    # Get conversation IDs belonging to this user's company
+
     conv_result = await db.execute(
         select(Conversation.id).where(
             Conversation.company_id == user.company_id
@@ -96,7 +96,7 @@ async def list_reports(db: DbSession, user: CurrentUser):
 @router.post("", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 async def create_report(data: CreateReportRequest, db: DbSession, user: CurrentUser):
     """Save a new report from a chat message."""
-    # Verify the conversation belongs to the user's company
+
     conv_result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(data.conversation_id),
@@ -141,7 +141,7 @@ async def get_report(report_id: UUID, db: DbSession, user: CurrentUser):
             detail="Report not found",
         )
 
-    # Verify ownership via conversation
+
     conv_result = await db.execute(
         select(Conversation).where(
             Conversation.id == report.conversation_id,
@@ -171,7 +171,7 @@ async def delete_report(report_id: UUID, db: DbSession, user: CurrentUser):
             detail="Report not found",
         )
 
-    # Verify ownership via conversation
+
     conv_result = await db.execute(
         select(Conversation).where(
             Conversation.id == report.conversation_id,

@@ -1,12 +1,4 @@
-"""
-LangGraph State Graph — wires all agent nodes together.
 
-Graph structure:
-  START → supervisor → query_planner → sql_writer → sql_executor
-        → visualization → insight → response_builder → END
-
-The supervisor can retry the sql_writer if execution fails.
-"""
 
 from langgraph.graph import StateGraph, END
 
@@ -26,15 +18,10 @@ from app.agents.insight import insight_node
 
 
 def build_graph() -> StateGraph:
-    """
-    Assemble and compile the multi-agent graph.
 
-    Returns a compiled LangGraph `CompiledGraph` that can be
-    invoked with `graph.ainvoke(state)`.
-    """
     graph = StateGraph(AgentState)
 
-    # ── Register nodes ──────────────────────────────────────────
+
     graph.add_node("supervisor", supervisor_node)
     graph.add_node("query_planner", query_planner_node)
     graph.add_node("sql_writer", sql_writer_node)
@@ -43,12 +30,9 @@ def build_graph() -> StateGraph:
     graph.add_node("insight", insight_node)
     graph.add_node("response_builder", response_builder_node)
 
-    # ── Wire edges ──────────────────────────────────────────────
 
-    # Entry point
     graph.set_entry_point("supervisor")
 
-    # Supervisor → conditional routing
     graph.add_conditional_edges(
         "supervisor",
         route_after_supervisor,
@@ -58,10 +42,10 @@ def build_graph() -> StateGraph:
         },
     )
 
-    # Linear pipeline: planner → writer → conditional
+
     graph.add_edge("query_planner", "sql_writer")
 
-    # After sql_writer: check for errors before hitting executor
+
     graph.add_conditional_edges(
         "sql_writer",
         route_after_sql_writer,
@@ -71,21 +55,21 @@ def build_graph() -> StateGraph:
         },
     )
 
-    # After executor: conditional (retry or proceed)
+
     graph.add_conditional_edges(
         "sql_executor",
         route_after_executor,
         {
-            "sql_writer": "sql_writer",       # retry on error
-            "visualization": "visualization",  # success
-            "response_builder": "response_builder",  # fatal error
+            "sql_writer": "sql_writer",      
+            "visualization": "visualization",  
+            "response_builder": "response_builder",  
         },
     )
 
-    # visualization → insight → response_builder → END
+
     graph.add_edge("visualization", "insight")
     graph.add_edge("insight", "response_builder")
     graph.add_edge("response_builder", END)
 
-    # ── Compile ─────────────────────────────────────────────────
+
     return graph.compile()

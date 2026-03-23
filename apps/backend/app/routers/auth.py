@@ -18,7 +18,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def slugify(text: str) -> str:
-    """Convert text to URL-safe slug."""
+
     text = text.lower().strip()
     text = re.sub(r'[^\w\s-]', '', text)
     text = re.sub(r'[-\s]+', '-', text)
@@ -27,11 +27,7 @@ def slugify(text: str) -> str:
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(data: RegisterRequest, db: DbSession):
-    """
-    Register a new user and create their company.
-    
-    This creates both a new Company and the first User (as owner).
-    """
+
 
     existing = await db.execute(
         select(User).where(User.email == data.email)
@@ -59,7 +55,7 @@ async def register(data: RegisterRequest, db: DbSession):
         slug=slug
     )
     db.add(company)
-    await db.flush()  # Get company ID
+    await db.flush() 
     
 
     user = User(
@@ -84,9 +80,7 @@ async def register(data: RegisterRequest, db: DbSession):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(data: LoginRequest, db: DbSession):
-    """
-    Authenticate user and return JWT tokens.
-    """
+
 
     result = await db.execute(
         select(User).where(User.email == data.email)
@@ -117,9 +111,7 @@ async def login(data: LoginRequest, db: DbSession):
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(data: RefreshTokenRequest, db: DbSession):
-    """
-    Refresh access token using refresh token.
-    """
+
     payload = AuthService.decode_token(data.refresh_token)
     
     if payload is None:
@@ -159,7 +151,7 @@ async def refresh_token(data: RefreshTokenRequest, db: DbSession):
 
 @router.get("/me", response_model=UserWithCompany)
 async def get_current_user_info(db: DbSession):
-    """Get current user information with company details."""
+
     from app.dependencies import get_current_user
     from fastapi import Depends
 

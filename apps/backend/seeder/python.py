@@ -11,9 +11,9 @@ from datetime import datetime, timedelta
 import uuid
 
 fake = Faker()
-Faker.seed(42)  # Reproducible data
+Faker.seed(42)  
 
-# Database connection
+
 DB_CONFIG = {
     'host': 'localhost',
     'database': 'new',
@@ -22,7 +22,7 @@ DB_CONFIG = {
     'port': 5432
 }
 
-# Realistic data pools
+
 PRODUCT_CATEGORIES = [
     'Electronics', 'Clothing', 'Home & Garden', 'Sports & Outdoors',
     'Books', 'Toys & Games', 'Beauty & Personal Care', 'Food & Beverages',
@@ -102,7 +102,7 @@ def seed_products(conn, company_ids, num_products=1000):
         category = random.choice(PRODUCT_CATEGORIES)
         product_name = random.choice(PRODUCT_NAMES[category])
         price = round(random.uniform(9.99, 999.99), 2)
-        cost = round(price * random.uniform(0.3, 0.7), 2)  # 30-70% margin
+        cost = round(price * random.uniform(0.3, 0.7), 2)  
         
         products.append((
             str(uuid.uuid4()),
@@ -133,7 +133,7 @@ def seed_customers(conn, company_ids, num_customers=10000):
     cursor = conn.cursor()
     customers = []
     
-    # Generate customers over 3 years
+
     start_date = datetime.now() - timedelta(days=3*365)
     
     for _ in range(num_customers):
@@ -169,13 +169,13 @@ def seed_orders_and_items(conn, company_ids, customer_ids, product_ids, num_orde
     
     cursor = conn.cursor()
     
-    # Generate orders over 2 years with realistic patterns
+
     start_date = datetime.now() - timedelta(days=2*365)
     orders = []
     order_items = []
     order_counter = 1
     
-    # Get product prices - CONVERT TO FLOAT
+
     cursor.execute("SELECT id, price FROM products")
     product_prices = {str(pid): float(price) for pid, price in cursor.fetchall()}
     
@@ -184,31 +184,31 @@ def seed_orders_and_items(conn, company_ids, customer_ids, product_ids, num_orde
         company_id = random.choice(company_ids)
         customer_id = random.choice(customer_ids)
         
-        # Realistic date distribution (more recent = more orders)
-        days_ago = int(random.expovariate(1/180))  # Exponential distribution
-        days_ago = min(days_ago, 730)  # Cap at 2 years
+
+        days_ago = int(random.expovariate(1/180))  
+        days_ago = min(days_ago, 730)  
         order_date = datetime.now() - timedelta(days=days_ago)
         
-        # Add seasonal spikes (Black Friday, Christmas)
+
         if order_date.month == 11 and order_date.day in range(25, 30):
-            # Black Friday - 3x more orders (skip some to simulate spike)
+
             if random.random() > 0.66:
                 continue
         elif order_date.month == 12 and order_date.day < 25:
-            # Christmas season - 2x more orders
+
             if random.random() > 0.5:
                 continue
         
-        # Order details
+
         num_items = random.choices([1, 2, 3, 4, 5], weights=[40, 30, 15, 10, 5])[0]
         selected_products = random.sample(product_ids, min(num_items, len(product_ids)))
         
-        total_amount = 0.0  # Use float
+        total_amount = 0.0  
         items = []
         
         for product_id in selected_products:
             quantity = random.choices([1, 2, 3], weights=[70, 20, 10])[0]
-            unit_price = product_prices.get(str(product_id), 50.0)  # Already float
+            unit_price = product_prices.get(str(product_id), 50.0)  
             discount = round(random.uniform(0, unit_price * 0.2), 2) if random.random() > 0.7 else 0.0
             
             item_total = (unit_price * quantity) - discount
@@ -244,7 +244,7 @@ def seed_orders_and_items(conn, company_ids, customer_ids, product_ids, num_orde
         order_items.extend(items)
         order_counter += 1
         
-        # Batch insert every 5000 records
+
         if len(orders) >= 5000:
             execute_batch(cursor, """
                 INSERT INTO orders (id, company_id, customer_id, order_number, order_date, 
@@ -262,7 +262,7 @@ def seed_orders_and_items(conn, company_ids, customer_ids, product_ids, num_orde
             orders = []
             order_items = []
     
-    # Insert remaining
+
     if orders:
         execute_batch(cursor, """
             INSERT INTO orders (id, company_id, customer_id, order_number, order_date, 
@@ -281,7 +281,7 @@ def seed_orders_and_items(conn, company_ids, customer_ids, product_ids, num_orde
     cursor.close()
     print(f"✅ Created {num_orders} orders with order items")
     
-    # Get actual order IDs for tickets
+
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM orders LIMIT 5000")
     order_ids = [str(oid[0]) for oid in cursor.fetchall()]
@@ -342,7 +342,7 @@ def seed_marketing_campaigns(conn, company_ids, num_campaigns=50):
         campaign_start = fake.date_between(start_date=start_date, end_date='today')
         campaign_end = campaign_start + timedelta(days=random.randint(7, 60))
         budget = round(random.uniform(1000, 50000), 2)
-        roi = random.uniform(0.5, 5.0)  # 0.5x to 5x return
+        roi = random.uniform(0.5, 5.0) 
         revenue = round(budget * roi, 2)
         
         campaigns.append((
@@ -379,14 +379,14 @@ def seed_website_traffic(conn, company_ids, num_days=730):
     for day in range(num_days):
         date = start_date + timedelta(days=day)
         
-        # Realistic traffic patterns
+
         base_visitors = random.randint(1000, 5000)
         
-        # Weekend traffic lower
+
         if date.weekday() >= 5:
             base_visitors = int(base_visitors * 0.7)
         
-        # Holiday spikes
+
         if date.month == 11 and date.day in range(25, 30):
             base_visitors = int(base_visitors * 3)
         elif date.month == 12:
@@ -428,7 +428,7 @@ def main():
     conn = get_db_connection()
     
     try:
-        # Seed data in order
+
         company_ids = seed_companies(conn, num_companies=1)
         product_ids = seed_products(conn, company_ids, num_products=1000)
         customer_ids = seed_customers(conn, company_ids, num_customers=10000)

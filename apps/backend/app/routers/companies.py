@@ -19,7 +19,7 @@ async def get_current_company(current_user: CurrentUser, db: DbSession):
     )
     company = result.scalar_one()
     
-    # Get counts
+
     user_count = await db.execute(
         select(func.count(User.id)).where(User.company_id == company.id)
     )

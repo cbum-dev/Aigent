@@ -28,9 +28,7 @@ if settings.langsmith_api_key:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan handler for startup/shutdown."""
 
-    # Debug database URL
     try:
         from urllib.parse import urlparse
         p = urlparse(settings.database_url)
@@ -40,7 +38,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"DEBUG: Could not parse database URL for logging: {e}")
 
-    # Debug CORS and Port
+
     print(f"DEBUG: CORS_ORIGINS: {settings.cors_origins}")
     print(f"DEBUG: PORT: {os.getenv('PORT', '8000 (default)')}")
     print(f"DEBUG: Using Redis URL: {settings.redis_url}")
@@ -61,7 +59,7 @@ app = FastAPI(
 )
 
 
-# Configure CORS
+
 _allow_origins = settings.cors_origins
 _allow_credentials = True
 
@@ -90,7 +88,7 @@ app.include_router(dashboard_router)
 
 @app.get("/")
 async def root():
-    """Root endpoint."""
+
     return {
         "name": "Aigent API",
         "version": "0.1.0",

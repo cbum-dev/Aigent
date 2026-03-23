@@ -32,7 +32,7 @@ router = APIRouter(prefix="/connections", tags=["dashboard"])
 encryption = get_encryption_service()
 
 
-# ── Response models ─────────────────────────────────────────────
+
 
 class StatCard(BaseModel):
     label: str
@@ -44,7 +44,7 @@ class StatCard(BaseModel):
 class Widget(BaseModel):
     id: str
     title: str
-    widget_type: str           # "bar", "line", "pie", "table"
+    widget_type: str          
     data: list[dict] | None = None
     config: dict | None = None
 
@@ -58,7 +58,7 @@ class DashboardPayload(BaseModel):
     widgets: list[Widget]
 
 
-# ── Endpoint ────────────────────────────────────────────────────
+
 
 @router.get("/{connection_id}/dashboard", response_model=DashboardPayload)
 async def get_dashboard_metrics(
@@ -89,7 +89,7 @@ async def get_dashboard_metrics(
     password = encryption.decrypt(conn.password_encrypted)
     creds = dict(host=host, port=conn.port, database=database, username=username, password=password)
 
-    # ── 1. Fetch schema ─────────────────────────────────────────
+
     try:
         schema_info = await ConnectionManager.get_schema_info(**creds)
     except Exception as e:
@@ -106,7 +106,7 @@ async def get_dashboard_metrics(
             widgets=[],
         )
 
-    # ── 2. Row counts for all tables (deterministic) ─────────────
+
     row_counts_raw = await asyncio.gather(*[
         _safe_query(creds, f"SELECT COUNT(*) AS _cnt FROM {_quote(t['schema'], t['name'])}")
         for t in tables
@@ -117,7 +117,7 @@ async def get_dashboard_metrics(
 
     total_rows = sum(table_rows.values())
 
-    # ── 3. Detect DB domain by pattern matching ──────────────────
+
     all_names = " ".join(t["name"] for t in tables)
     all_col_names = " ".join(
         c["name"]
@@ -128,8 +128,8 @@ async def get_dashboard_metrics(
 
     db_type = _detect_domain(combined)
 
-    # ── 4. Build widgets based on domain ────────────────────────
-    # Pick the top 3 tables by row count
+
+
     sorted_tables = sorted(table_rows.items(), key=lambda x: x[1], reverse=True)
     top_table_names = [n for n, _ in sorted_tables if _ > 0][:3]
     top_tables_info = {t["name"]: t for t in tables}
@@ -137,7 +137,6 @@ async def get_dashboard_metrics(
     widgets: list[Widget] = []
     overview: list[StatCard] = []
 
-    # Always: stat card for each non-empty table row count
     for tname, cnt in sorted_tables[:4]:
         overview.append(StatCard(
             label=_humanize(tname) + " Count",
@@ -145,11 +144,11 @@ async def get_dashboard_metrics(
             icon="rows",
         ))
 
-    # Domain-specific widgets
+
     domain_widgets = await _build_domain_widgets(creds, tables, table_rows, db_type, top_table_names, top_tables_info)
     widgets.extend(domain_widgets)
 
-    # Fallback: if no domain widgets, at least show a row counts bar chart
+
     if not widgets:
         bar_data = [{"table": n, "rows": c} for n, c in sorted_tables if c > 0]
         if bar_data:
@@ -161,7 +160,7 @@ async def get_dashboard_metrics(
                 config={"x_key": "table", "y_key": "rows", "color_each": True},
             ))
 
-        # For each table, show a sample
+
         for tname in top_table_names[:2]:
             t_info = top_tables_info.get(tname)
             if not t_info:
@@ -204,7 +203,7 @@ async def get_dashboard_metrics(
     return payload
 
 
-# ── Domain Detection ─────────────────────────────────────────────
+
 
 def _detect_domain(combined: str) -> str:
     patterns = {
@@ -225,7 +224,7 @@ def _detect_domain(combined: str) -> str:
     return best if scores[best] > 0 else "general"
 
 
-# ── Domain-Specific Widgets ──────────────────────────────────────
+
 
 async def _build_domain_widgets(
     creds: dict,
@@ -238,7 +237,7 @@ async def _build_domain_widgets(
     widgets: list[Widget] = []
     tbl = {t["name"]: t for t in tables}
 
-    # Helper: find a table whose name contains substring
+
     def find_table(*substrings: str) -> dict | None:
         for sub in substrings:
             for name, t in tbl.items():
@@ -246,7 +245,7 @@ async def _build_domain_widgets(
                     return t
         return None
 
-    # Helper: find column in table whose name contains substring
+
     def find_col(t: dict, *subs: str) -> str | None:
         for sub in subs:
             for c in t.get("columns", []):
@@ -264,7 +263,7 @@ async def _build_domain_widgets(
             amount_col = find_col(orders_t, "amount", "total", "price", "revenue", "value")
             status_col = find_col(orders_t, "status")
 
-            # Monthly revenue trend
+
             if date_col and amount_col:
                 rows = await _safe_query(creds,
                     f"SELECT DATE_TRUNC('month', \"{date_col}\")::date AS month, "
@@ -279,7 +278,7 @@ async def _build_domain_widgets(
                         config={"x_key": "month", "y_key": "revenue"},
                     ))
 
-            # Orders by status
+
             if status_col:
                 rows = await _safe_query(creds,
                     f"SELECT \"{status_col}\" AS status, COUNT(*) AS count "
@@ -397,7 +396,7 @@ async def _build_domain_widgets(
                         config={"x_key": "month", "y_key": "signups"},
                     ))
 
-            # Fallback: sample data table
+
             if not widgets:
                 rows = await _safe_query(creds, f"SELECT * FROM {fn} LIMIT 20")
                 if rows:
@@ -463,7 +462,7 @@ async def _build_domain_widgets(
                         config={"x_key": x, "y_key": "views"},
                     ))
 
-            # Sample table
+
             rows = await _safe_query(creds, f"SELECT * FROM {fn} LIMIT 10")
             if rows:
                 widgets.append(Widget(
@@ -508,7 +507,7 @@ async def _build_domain_widgets(
                         config={"x_key": "day", "y_key": "events"},
                     ))
 
-    # ── Universal: show sample table for top 2 non-empty tables if we have few widgets
+
     if len(widgets) < 2:
         for tname in top_names[:3]:
             t_info = info_map.get(tname)
@@ -530,7 +529,7 @@ async def _build_domain_widgets(
     return widgets
 
 
-# ── AI Dashboard Enrichment ──────────────────────────────────────
+
 
 async def _agent_enrich_dashboard(db_name: str, db_type: str, schema_brief: str, creds: dict, api_key: str | None = None) -> tuple[str, list[Widget]]:
     summary = f"A {db_type} database with {schema_brief.count(';') + 1} tables."
@@ -588,7 +587,7 @@ PostgreSQL SQL rules:
     return summary, ai_widgets
 
 
-# ── Helpers ─────────────────────────────────────────────────────
+
 
 def _quote(schema: str, name: str) -> str:
     return f'"{schema}"."{name}"'

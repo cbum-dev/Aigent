@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 _pool: redis.Redis | None = None
 
 
-# ── Lifecycle ──────────────────────────────────────────────────
+
 
 async def init_redis(url: str = "redis://localhost:6379") -> None:
     """Create the global connection pool (called from lifespan)."""
@@ -42,7 +42,7 @@ def get_redis() -> redis.Redis | None:
     return _pool
 
 
-# ── JSON helpers ───────────────────────────────────────────────
+
 
 async def get_json(key: str) -> Any | None:
     """Return deserialized JSON or None on miss / error."""

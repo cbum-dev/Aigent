@@ -1,10 +1,4 @@
-"""
-Query Planner Agent — fetches DB schema, identifies relevant tables.
 
-This is the first analytical agent in the pipeline. It receives the
-user's question and the database schema, then uses the LLM to determine
-which tables and columns are relevant.
-"""
 
 from app.agents.state import AgentState, AgentMessage
 from app.agents.llm import get_llm
@@ -13,11 +7,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 
 async def query_planner_node(state: AgentState) -> dict:
-    """
-    1. Fetch full schema from the target database.
-    2. Ask the LLM which tables/columns are relevant to the question.
-    3. Return schema_info + relevant_tables.
-    """
+
     messages: list[AgentMessage] = list(state.get("agent_messages", []))
 
     messages.append({
@@ -26,7 +16,7 @@ async def query_planner_node(state: AgentState) -> dict:
         "content": "Fetching database schema...",
     })
 
-    # ── Fetch schema ────────────────────────────────────────────
+
     try:
         schema_info = await ConnectionManager.get_schema_info(
             host=state["db_host"],
@@ -64,7 +54,7 @@ async def query_planner_node(state: AgentState) -> dict:
         "content": f"Found {len(schema_info['tables'])} tables. Identifying relevant ones...",
     })
 
-    # ── Build a compact schema description for the LLM ──────────
+
     schema_text_parts: list[str] = []
     for table in schema_info["tables"]:
         col_parts = []
@@ -79,7 +69,7 @@ async def query_planner_node(state: AgentState) -> dict:
         schema_text_parts.append(f"  {table['full_name']}: {cols}")
     schema_text = "\n".join(schema_text_parts)
 
-    # ── Ask the LLM ─────────────────────────────────────────────
+
     llm = get_llm(temperature=0.0, api_key=state.get("user_api_key"))
 
     system_prompt = (
@@ -107,20 +97,20 @@ async def query_planner_node(state: AgentState) -> dict:
         HumanMessage(content=human_prompt),
     ])
 
-    # ── Parse the response into structured data ────────────────
+
     relevant_tables: list[dict] = []
     response_text = response.content
 
     for table in schema_info["tables"]:
         table_name = table["name"]
         if table_name.lower() in response_text.lower():
-            # This table was mentioned as relevant
+
             relevant_cols = []
             for col in table["columns"]:
                 if col["name"].lower() in response_text.lower():
                     relevant_cols.append(col)
 
-            # If no specific columns matched, include all
+
             if not relevant_cols:
                 relevant_cols = table["columns"]
 
@@ -131,7 +121,7 @@ async def query_planner_node(state: AgentState) -> dict:
                 "columns": relevant_cols,
             })
 
-    # Fallback: if parsing found nothing, include all tables
+
     if not relevant_tables:
         relevant_tables = schema_info["tables"]
 

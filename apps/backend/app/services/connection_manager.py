@@ -4,7 +4,7 @@ from app.services.encryption import get_encryption_service
 
 
 class ConnectionManager:
-    """Service for managing and testing external database connections."""
+
     
     @staticmethod
     async def test_connection(
@@ -15,20 +15,15 @@ class ConnectionManager:
         password: str,
         ssl_mode: str = "prefer"
     ) -> tuple[bool, Optional[str]]:
-        """
-        Test a PostgreSQL connection.
-        
-        Returns:
-            tuple: (success: bool, error_message: Optional[str])
-        """
+
         try:
-            # Build connection string
+
             dsn = f"postgresql://{username}:{password}@{host}:{port}/{database}"
             
-            # Attempt connection
+
             conn = await asyncpg.connect(dsn, timeout=10)
             
-            # Test with a simple query
+
             await conn.execute("SELECT 1")
             await conn.close()
             
@@ -51,17 +46,12 @@ class ConnectionManager:
         username: str,
         password: str,
     ) -> dict:
-        """
-        Retrieve schema information from the connected database.
-        
-        Returns:
-            dict: Schema information including tables and columns
-        """
+
         dsn = f"postgresql://{username}:{password}@{host}:{port}/{database}"
         conn = await asyncpg.connect(dsn, timeout=10)
         
         try:
-            # Get all tables
+
             tables = await conn.fetch("""
                 SELECT table_name, table_schema
                 FROM information_schema.tables
@@ -76,7 +66,7 @@ class ConnectionManager:
                 table_name = table["table_name"]
                 schema_name = table["table_schema"]
                 
-                # Get columns for each table
+
                 columns_data = await conn.fetch("""
                     SELECT 
                         column_name,
@@ -94,10 +84,10 @@ class ConnectionManager:
                     data_type = col["data_type"]
                     
                     sample_values = []
-                    # Fetch sample values for text-like columns to provide data context
+
                     if any(t in data_type.lower() for t in ["char", "text", "varchar"]):
                         try:
-                            # Fetch up to 5 distinct non-null values
+
                             samples = await conn.fetch(f"""
                                 SELECT DISTINCT "{col_name}"
                                 FROM "{schema_name}"."{table_name}"
@@ -106,7 +96,7 @@ class ConnectionManager:
                             """)
                             sample_values = [str(r[0]) for r in samples]
                         except:
-                            # Fallback if query fails (e.g. permission issues or weird types)
+
                             sample_values = []
                     
                     table_columns.append({
@@ -139,31 +129,26 @@ class ConnectionManager:
         query: str,
         params: list = None
     ) -> dict:
-        """
-        Execute a read-only query on the connected database.
-        
-        Returns:
-            dict: Query results with columns and rows
-        """
+
         dsn = f"postgresql://{username}:{password}@{host}:{port}/{database}"
         conn = await asyncpg.connect(dsn, timeout=30)
         
         try:
-            # Execute query (read-only by using a transaction)
+
             async with conn.transaction():
-                # Set read-only mode
+
                 await conn.execute("SET TRANSACTION READ ONLY")
                 
-                # Execute the query
+
                 rows = await conn.fetch(query, *(params or []))
                 
                 if not rows:
                     return {"columns": [], "rows": [], "row_count": 0}
                 
-                # Extract column names from first row
+
                 columns = list(rows[0].keys())
                 
-                # Convert rows to list of dicts
+
                 data = [dict(row) for row in rows]
                 
                 return {

@@ -1,9 +1,4 @@
-"""
-Insight Agent — explains the data in plain language.
 
-Takes the query results and produces a human-readable markdown
-summary: trends, anomalies, key takeaways.
-"""
 
 import json
 from app.agents.state import AgentState, AgentMessage
@@ -12,9 +7,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 
 async def insight_node(state: AgentState) -> dict:
-    """
-    Generate natural-language insights from the query results.
-    """
+
     messages: list[AgentMessage] = list(state.get("agent_messages", []))
 
     query_results = state.get("query_results", {})
@@ -39,15 +32,15 @@ async def insight_node(state: AgentState) -> dict:
         "content": "Analyzing results to generate insights...",
     })
 
-    # ── Build data context ─────────────────────────────────────
+
     sample_rows = rows[:20]
     data_preview = json.dumps(
         {"columns": columns, "sample_rows": sample_rows, "total_rows": len(rows)},
         default=str,
     )
 
-    # ── Explain the data in plain language ─────────────────────
-    llm = get_llm(temperature=0.3, api_key=state.get("user_api_key"))  # slightly more creative for explanations
+
+    llm = get_llm(temperature=0.3, api_key=state.get("user_api_key"))  
 
     system_prompt = (
         "You are a business analyst. Given query results, provide a clear, "

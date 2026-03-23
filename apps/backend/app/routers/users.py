@@ -54,8 +54,6 @@ async def update_current_user(
     
     await db.flush()
     
-    # Manually set the flag for the response object if needed, 
-    # but Pydantic's from_attributes might need extra help or we can just return a dict
     resp = UserResponse.model_validate(current_user)
     resp.has_gemini_api_key = current_user.gemini_api_key_encrypted is not None
     return resp

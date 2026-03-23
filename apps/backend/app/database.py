@@ -33,12 +33,12 @@ async_session_maker = async_sessionmaker(
 
 
 class Base(DeclarativeBase):
-    """Base class for all SQLAlchemy models."""
+
     pass
 
 
 async def get_db() -> AsyncSession:
-    """Dependency that provides a database session."""
+
     async with async_session_maker() as session:
         try:
             yield session
@@ -51,6 +51,6 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db():
-    """Initialize database tables."""
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -1,9 +1,4 @@
-"""
-Chat Router — WebSocket endpoint for real-time agent interaction.
 
-Handles connection upgrades, JWT authentication via query param,
-and the message loop.
-"""
 
 import json
 from uuid import UUID
@@ -23,7 +18,7 @@ async def get_current_user_ws(
     token: str,
     db: AsyncSession,
 ) -> User:
-    """Validate token from query param for WebSocket."""
+
     auth_service = get_auth_service()
     try:
         payload = auth_service.verify_token(token)
@@ -34,7 +29,7 @@ async def get_current_user_ws(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     from sqlalchemy import select
-    # 'sub' in token is user_id
+
     user_id_str = payload.get("sub")
     result = await db.execute(select(User).where(User.id == UUID(user_id_str)))
     user = result.scalar_one_or_none()
@@ -51,14 +46,7 @@ async def websocket_endpoint(
     token: str = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    WebSocket endpoint for real-time chat.
-    
-    Flow:
-    1. Connect & Auth
-    2. Check conversation access
-    3. Loop: Receive message -> Save -> Run Agent -> Stream Response -> Save Response
-    """
+
     try:
         user = await get_current_user_ws(token, db)
     except HTTPException:
@@ -69,7 +57,7 @@ async def websocket_endpoint(
     conversation = await chat_service.get_conversation(conversation_id, user.id)
     
     if not conversation:
-        await websocket.close(code=4003)  # Forbidden
+        await websocket.close(code=4003) 
         return
         
     if not conversation.database_connection_id:
@@ -85,7 +73,7 @@ async def websocket_endpoint(
 
     try:
         while True:
-            # 1. Receive User Message
+
             data = await websocket.receive_text()
             payload = json.loads(data)
             user_msg_content = payload.get("content")
@@ -93,14 +81,14 @@ async def websocket_endpoint(
             if not user_msg_content:
                 continue
 
-            # 2. Save User Message
+
             await chat_service.save_message(
                 conversation_id=conversation_id,
                 role=MessageRole.USER,
                 content=user_msg_content
             )
 
-            # 3. Run Agent & Stream
+
             full_response_content = ""
             final_metadata = {}
 
@@ -122,18 +110,18 @@ async def websocket_endpoint(
             ):
                 await websocket.send_text(event_json)
                 
-                # Accumulate final response for saving
+
                 event = json.loads(event_json)
                 if event["type"] == "result":
                     full_response_content = event.get("content", "")
-                    # Save other artifacts as metadata
+
                     final_metadata = {
                         "sql_query": event.get("sql_query"),
                         "chart_config": event.get("chart_config"),
                         "insights": event.get("insights")
                     }
 
-            # 4. Save Assistant Message
+
             if full_response_content or final_metadata:
                 await chat_service.save_message(
                     conversation_id=conversation_id,
@@ -145,7 +133,7 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         pass
     except Exception as e:
-        # Try to send error if still connected
+
         try:
              await websocket.send_text(json.dumps({"type": "error", "content": str(e)}))
         except:

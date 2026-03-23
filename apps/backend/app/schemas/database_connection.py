@@ -40,9 +40,9 @@ class DatabaseConnectionResponse(BaseModel):
     company_id: UUID
     name: str
     description: Optional[str]
-    host: str  # Will be masked in response
+    host: str  
     port: int
-    database: str  # Will be masked in response
+    database: str  
     ssl_mode: str
     is_active: bool
     last_tested_at: Optional[datetime]

@@ -43,14 +43,14 @@ import {
 } from "lucide-react";
 
 const CHART_COLORS = [
-    "hsl(262, 83%, 58%)", // purple primary
-    "hsl(199, 89%, 48%)", // cyan accent
-    "hsl(142, 71%, 45%)", // emerald
-    "hsl(38, 92%, 50%)",  // amber
-    "hsl(347, 77%, 50%)", // rose
-    "hsl(199, 89%, 65%)", // sky
-    "hsl(262, 83%, 72%)", // purple light
-    "hsl(142, 71%, 65%)", // emerald light
+    "hsl(262, 83%, 58%)",
+    "hsl(199, 89%, 48%)",
+    "hsl(142, 71%, 45%)",
+    "hsl(38, 92%, 50%)",
+    "hsl(347, 77%, 50%)",
+    "hsl(199, 89%, 65%)",
+    "hsl(262, 83%, 72%)",
+    "hsl(142, 71%, 65%)",
 ];
 
 interface ChartConfig {

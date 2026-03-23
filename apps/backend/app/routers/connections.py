@@ -22,7 +22,7 @@ encryption = get_encryption_service()
 
 
 def mask_string(s: str, show_chars: int = 4) -> str:
-    """Mask a string showing only first few characters."""
+
     if len(s) <= show_chars:
         return "*" * len(s)
     return s[:show_chars] + "*" * (len(s) - show_chars)
@@ -34,7 +34,7 @@ async def create_connection(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Create a new database connection."""
+
     connection = DatabaseConnection(
         company_id=current_user.company_id,
         name=data.name,
@@ -50,10 +50,10 @@ async def create_connection(
     db.add(connection)
     await db.flush()
 
-    # Invalidate list cache
+
     await cache.delete(f"connections:{current_user.company_id}")
     
-    # Return with masked values
+
     return DatabaseConnectionResponse(
         id=connection.id,
         company_id=connection.company_id,
@@ -72,7 +72,7 @@ async def create_connection(
 
 @router.get("", response_model=list[DatabaseConnectionResponse])
 async def list_connections(current_user: CurrentUser, db: DbSession):
-    """List all database connections for the current company."""
+
     cache_key = f"connections:{current_user.company_id}"
     cached = await cache.get_json(cache_key)
     if cached is not None:
@@ -85,7 +85,7 @@ async def list_connections(current_user: CurrentUser, db: DbSession):
     )
     connections = result.scalars().all()
     
-    # Return with masked values
+
     items = [
         DatabaseConnectionResponse(
             id=conn.id,
@@ -113,7 +113,7 @@ async def get_connection(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Get a specific database connection."""
+
     cache_key = f"connection:{connection_id}"
     cached = await cache.get_json(cache_key)
     if cached is not None:
@@ -157,7 +157,7 @@ async def delete_connection(
     admin_user: AdminUser,
     db: DbSession
 ):
-    """Delete a database connection (admin only)."""
+
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.id == UUID(connection_id),
@@ -172,7 +172,7 @@ async def delete_connection(
             detail="Connection not found"
         )
 
-    # Invalidate caches
+
     await cache.delete(f"connection:{connection_id}")
     await cache.delete(f"connections:{admin_user.company_id}")
     await cache.delete(f"conn_creds:{connection_id}")
@@ -182,7 +182,7 @@ async def delete_connection(
 
 @router.post("/test", response_model=DatabaseConnectionTestResponse)
 async def test_connection_credentials(data: DatabaseConnectionTestRequest):
-    """Test database connection with provided credentials."""
+
     success, error = await ConnectionManager.test_connection(
         host=data.host,
         port=data.port,
@@ -204,7 +204,7 @@ async def test_saved_connection(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Test a saved database connection."""
+
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.id == UUID(connection_id),
@@ -219,7 +219,6 @@ async def test_saved_connection(
             detail="Connection not found"
         )
     
-    # Decrypt credentials
     host = encryption.decrypt(conn.host_encrypted)
     database = encryption.decrypt(conn.database_encrypted)
     username = encryption.decrypt(conn.username_encrypted)
@@ -234,7 +233,6 @@ async def test_saved_connection(
         ssl_mode=conn.ssl_mode
     )
     
-    # Update connection status
     conn.last_tested_at = datetime.now(timezone.utc)
     conn.last_test_success = success
     await db.flush()
@@ -251,7 +249,7 @@ async def get_connection_schema(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Get schema information from a database connection."""
+
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.id == UUID(connection_id),
@@ -266,7 +264,7 @@ async def get_connection_schema(
             detail="Connection not found"
         )
     
-    # Decrypt credentials
+
     host = encryption.decrypt(conn.host_encrypted)
     database = encryption.decrypt(conn.database_encrypted)
     username = encryption.decrypt(conn.username_encrypted)
@@ -288,7 +286,7 @@ async def get_connection_schema(
         )
 
 
-# ── Ad-hoc SQL Execution ─────────────────────────────────────────
+
 
 from pydantic import BaseModel as _BaseModel
 
@@ -310,7 +308,7 @@ async def run_query(
     current_user: CurrentUser,
     db: DbSession,
 ):
-    """Execute a read-only SQL query against a connection and return results."""
+
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.id == UUID(connection_id),
@@ -321,7 +319,7 @@ async def run_query(
     if not conn:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection not found")
 
-    # Safety: only allow SELECT
+
     stripped = payload.sql.strip().lstrip(";").strip()
     if not stripped.upper().startswith("SELECT"):
         raise HTTPException(

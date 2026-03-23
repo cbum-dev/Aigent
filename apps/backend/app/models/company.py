@@ -7,8 +7,6 @@ from app.database import Base
 
 
 class Company(Base):
-    """Multi-tenant company/organization model."""
-    
     __tablename__ = "companies"
     
     id: Mapped[uuid.UUID] = mapped_column(
@@ -28,7 +26,7 @@ class Company(Base):
         onupdate=func.now()
     )
     
-    # Relationships
+
     users: Mapped[list["User"]] = relationship(
         "User", 
         back_populates="company",

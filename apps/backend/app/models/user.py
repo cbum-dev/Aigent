@@ -9,7 +9,7 @@ from app.database import Base
 
 
 class UserRole(str, Enum):
-    """User roles within a company."""
+
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
@@ -17,7 +17,7 @@ class UserRole(str, Enum):
 
 
 class User(Base):
-    """User model with multi-tenant company association."""
+
     
     __tablename__ = "users"
     

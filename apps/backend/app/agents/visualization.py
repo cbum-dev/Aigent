@@ -1,9 +1,4 @@
-"""
-Visualization Agent — analyses query results and produces a chart config.
 
-The chart config is a JSON-serializable dict that the frontend can
-render using any charting library (Chart.js, Recharts, etc.).
-"""
 
 import json
 from app.agents.state import AgentState, AgentMessage
@@ -12,10 +7,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 
 async def visualization_node(state: AgentState) -> dict:
-    """
-    Decide the best chart type and build a chart configuration from the
-    query results.
-    """
+
     messages: list[AgentMessage] = list(state.get("agent_messages", []))
 
     query_results = state.get("query_results", {})
@@ -39,11 +31,11 @@ async def visualization_node(state: AgentState) -> dict:
         "content": "Analyzing data for best visualization...",
     })
 
-    # ── Build a data sample for the LLM ─────────────────────────
-    sample_rows = rows[:10]  # send at most 10 rows
+
+    sample_rows = rows[:10]
     data_preview = json.dumps({"columns": columns, "sample_rows": sample_rows}, default=str)
 
-    # ── Analyze data for best visualization ──────────────────────
+
     llm = get_llm(temperature=0.0, api_key=state.get("user_api_key"))
 
     system_prompt = (
@@ -80,10 +72,10 @@ async def visualization_node(state: AgentState) -> dict:
         HumanMessage(content=human_prompt),
     ])
 
-    # ── Parse the JSON response ─────────────────────────────────
+
     response_text = response.content.strip()
 
-    # Strip markdown fences if present
+
     if response_text.startswith("```"):
         lines = response_text.split("\n")
         lines = [l for l in lines if not l.strip().startswith("```")]
@@ -92,7 +84,7 @@ async def visualization_node(state: AgentState) -> dict:
     try:
         chart_config = json.loads(response_text)
     except json.JSONDecodeError:
-        # Fallback: render as table
+
         chart_config = {
             "chart_type": "table",
             "title": "Query Results",
@@ -102,7 +94,7 @@ async def visualization_node(state: AgentState) -> dict:
             "y_label": columns[1] if len(columns) > 1 else "",
         }
 
-    # Attach the actual data to the chart config
+
     chart_config["datasets"] = [{
         "label": chart_config.get("title", "Data"),
         "data": rows,

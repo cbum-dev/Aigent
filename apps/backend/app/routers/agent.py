@@ -1,9 +1,4 @@
-"""
-Agent API Router — exposes the multi-agent pipeline over HTTP.
 
-POST /agent/query — ask a question against a connected database.
-GET  /agent/graph  — visualise the agent pipeline structure.
-"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +16,7 @@ from app.agents.graph import build_graph
 router = APIRouter(prefix="/agent", tags=["agent"])
 
 
-# ── Schemas ──────────────────────────────────────────────────────
+
 
 class AgentQueryRequest(BaseModel):
     question: str
@@ -45,7 +40,7 @@ class AgentQueryResponse(BaseModel):
     error: str | None = None
 
 
-# ── Endpoints ────────────────────────────────────────────────────
+
 
 @router.post("/query", response_model=AgentQueryResponse)
 async def run_agent_query(
@@ -53,16 +48,9 @@ async def run_agent_query(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Run the multi-agent analytics pipeline.
 
-    1. Validate the user has access to the connection.
-    2. Decrypt credentials.
-    3. Invoke the LangGraph pipeline.
-    4. Return structured results.
-    """
 
-    # ── Fetch & authorise connection ──────────────────────────
+
     result = await db.execute(
         select(DatabaseConnection).where(
             DatabaseConnection.id == request.connection_id,
@@ -74,7 +62,7 @@ async def run_agent_query(
     if not connection:
         raise HTTPException(status_code=404, detail="Database connection not found")
 
-    # ── Decrypt credentials ──────────────────────────────────
+
     enc = get_encryption_service()
 
     try:
@@ -88,7 +76,7 @@ async def run_agent_query(
             detail="Failed to decrypt database credentials",
         )
 
-    # ── Build initial state ──────────────────────────────────
+
     initial_state = {
         "question": request.question,
         "company_id": str(current_user.company_id),
@@ -102,7 +90,7 @@ async def run_agent_query(
         "retry_count": 0,
     }
 
-    # ── Run the graph ────────────────────────────────────────
+
     graph = build_graph()
 
     try:
@@ -113,7 +101,7 @@ async def run_agent_query(
             detail=f"Agent pipeline failed: {str(e)}",
         )
 
-    # ── Return results ───────────────────────────────────────
+
     return AgentQueryResponse(
         question=request.question,
         sql_query=final_state.get("sql_query"),
@@ -131,7 +119,7 @@ async def run_agent_query(
 
 @router.get("/graph")
 async def get_graph_info():
-    """Return metadata about the agent pipeline for debugging."""
+
     return {
         "nodes": [
             "supervisor",

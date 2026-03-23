@@ -1,17 +1,11 @@
-"""
-SQL Executor Agent — runs the generated query against the user's database.
 
-Uses the ConnectionManager to execute the query in read-only mode.
-"""
 
 from app.agents.state import AgentState, AgentMessage
 from app.services.connection_manager import ConnectionManager
 
 
 async def sql_executor_node(state: AgentState) -> dict:
-    """
-    Execute the SQL query from the state against the target database.
-    """
+
     messages: list[AgentMessage] = list(state.get("agent_messages", []))
 
     sql_query = state.get("sql_query", "")

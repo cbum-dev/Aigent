@@ -1,9 +1,4 @@
-"""
-Chat Service — handles message persistence and agent streaming.
 
-Manages database interaction for conversation history and invokes
-the LangGraph pipeline, yielding events for the WebSocket.
-"""
 
 import json
 from uuid import UUID
@@ -28,7 +23,7 @@ class ChatService:
         content: str,
         metadata: dict | None = None,
     ) -> Message:
-        """Persist a new message to the database."""
+
         message = Message(
             conversation_id=conversation_id,
             role=role,
@@ -38,14 +33,13 @@ class ChatService:
         self.db.add(message)
         await self.db.commit()
         await self.db.refresh(message)
-        # Invalidate messages cache
         await cache.delete(f"messages:{conversation_id}")
         return message
 
     async def get_conversation(
         self, conversation_id: UUID, user_id: UUID
     ) -> Conversation | None:
-        """Evaluate if the user has access to this conversation."""
+
         result = await self.db.execute(
             select(Conversation).where(
                 Conversation.id == conversation_id,
@@ -55,7 +49,7 @@ class ChatService:
         return result.scalar_one_or_none()
 
     async def get_connection_credentials(self, connection_id: UUID) -> dict:
-        """Retrieve and decrypt connection credentials."""
+
         cache_key = f"conn_creds:{connection_id}"
         cached = await cache.get_json(cache_key)
         if cached is not None:
@@ -93,20 +87,12 @@ class ChatService:
         company_id: UUID,
         user_api_key: str | None = None,
     ):
-        """
-        Generator that runs the agent pipeline and yields events.
 
-        Yields JSON strings:
-        - {"type": "ping"}
-        - {"type": "thought", "agent": "...", "content": "..."}
-        - {"type": "result", "content": "...", "data": ...}
-        - {"type": "error", "content": "..."}
-        """
         try:
-            # 1. Get credentials
+
             creds = await self.get_connection_credentials(connection_id)
 
-            # 2. Build initial state
+
             initial_state = {
                 "question": question,
                 "company_id": str(company_id),
@@ -121,20 +107,20 @@ class ChatService:
                 "retry_count": 0,
             }
 
-            # 3. Run graph with event streaming
+
             graph = build_graph()
             
-            # We use astream_events to catch node updates
+
             async for event in graph.astream_events(
                 initial_state, version="v1"
             ):
                 kind = event["event"]
                 
-                # Yield a ping on every major event to keep Render connection alive
+
                 if kind.endswith("_start"):
                     yield json.dumps({"type": "ping"})
 
-                # Filter for node completion events that update state
+
                 if kind == "on_chain_end":
                     node_name = event.get("name")
                     data = event["data"].get("output")
@@ -154,11 +140,11 @@ class ChatService:
                                     "msg_type": last_msg["type"]
                                 })
 
-                # Also yield the final output
+
                 if kind == "on_chain_end" and event.get("name") == "LangGraph":
                     final_state = event["data"].get("output", {})
                     
-                    # Handle LangGraph 0.1+ behavior where output is {'node_name': state_update}
+
                     if "response_builder" in final_state:
                         final_state = final_state["response_builder"]
                     elif "supervisor" in final_state:

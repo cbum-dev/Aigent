@@ -7,7 +7,7 @@ from app.database import Base
 
 
 class Report(Base):
-    """Saved report/visualization from a conversation."""
+
     
     __tablename__ = "reports"
     

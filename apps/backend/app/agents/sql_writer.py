@@ -1,9 +1,4 @@
-"""
-SQL Writer Agent — generates a safe, read-only SQL query.
 
-Uses the relevant tables identified by the Query Planner and the
-user's question to produce a PostgreSQL SELECT statement.
-"""
 
 from app.agents.state import AgentState, AgentMessage
 from app.agents.llm import get_llm
@@ -11,9 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 
 async def sql_writer_node(state: AgentState) -> dict:
-    """
-    Generate a read-only SQL query from the user question + relevant tables.
-    """
+
     messages: list[AgentMessage] = list(state.get("agent_messages", []))
 
     messages.append({
@@ -22,7 +15,7 @@ async def sql_writer_node(state: AgentState) -> dict:
         "content": "Generating SQL query...",
     })
 
-    # ── Build schema context for the LLM ────────────────────────
+
     relevant_tables = state.get("relevant_tables", [])
     if not relevant_tables:
         messages.append({
@@ -49,7 +42,7 @@ async def sql_writer_node(state: AgentState) -> dict:
         schema_parts.append(f"Table: {table['full_name']}\n  Columns: {cols}")
     schema_context = "\n\n".join(schema_parts)
 
-    # ── Ask the LLM to write SQL ────────────────────────────────
+
     llm = get_llm(temperature=0.0, api_key=state.get("user_api_key"))
 
     system_prompt = (
@@ -89,14 +82,14 @@ async def sql_writer_node(state: AgentState) -> dict:
 
     sql_query = response.content.strip()
 
-    # ── Strip markdown fences if present ─────────────────────────
+
     if sql_query.startswith("```"):
         lines = sql_query.split("\n")
-        # Remove first and last lines (```sql and ```)
+
         lines = [l for l in lines if not l.strip().startswith("```")]
         sql_query = "\n".join(lines).strip()
 
-    # ── Safety check: reject non-SELECT queries ──────────────────
+
     first_word = sql_query.split()[0].upper() if sql_query.split() else ""
     if first_word not in ("SELECT", "WITH"):
         messages.append({

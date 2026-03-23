@@ -8,14 +8,14 @@ from app.database import Base
 
 
 class MessageRole(str, Enum):
-    """Message sender role."""
+
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
 
 
 class Conversation(Base):
-    """Chat conversation container."""
+
     
     __tablename__ = "conversations"
     
@@ -72,7 +72,7 @@ class Conversation(Base):
 
 
 class Message(Base):
-    """Individual chat message within a conversation."""
+
     
     __tablename__ = "messages"
     

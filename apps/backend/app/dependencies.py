@@ -17,12 +17,7 @@ async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
     db: Annotated[AsyncSession, Depends(get_db)]
 ) -> User:
-    """
-    Get the current authenticated user from JWT token.
-    
-    Raises:
-        HTTPException: If token is invalid or user not found
-    """
+
     token = credentials.credentials
     payload = AuthService.decode_token(token)
     
@@ -74,7 +69,7 @@ async def get_current_user(
 async def require_admin(
     current_user: Annotated[User, Depends(get_current_user)]
 ) -> User:
-    """Require the current user to be an admin or owner."""
+
     if current_user.role not in ["admin", "owner"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -86,7 +81,7 @@ async def require_admin(
 async def require_owner(
     current_user: Annotated[User, Depends(get_current_user)]
 ) -> User:
-    """Require the current user to be the company owner."""
+
     if current_user.role != "owner":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

@@ -7,7 +7,7 @@ from app.database import Base
 
 
 class DatabaseConnection(Base):
-    """External database connection with encrypted credentials."""
+
     
     __tablename__ = "database_connections"
     

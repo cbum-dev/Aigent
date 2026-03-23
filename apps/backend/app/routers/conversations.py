@@ -27,7 +27,7 @@ async def create_conversation(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Create a new conversation."""
+
     conversation = Conversation(
         company_id=current_user.company_id,
         user_id=current_user.id,
@@ -38,7 +38,7 @@ async def create_conversation(
     db.add(conversation)
     await db.flush()
 
-    # Invalidate list cache
+
     await cache.invalidate_pattern(f"conversations:{current_user.id}:*")
     
     return conversation
@@ -51,13 +51,13 @@ async def list_conversations(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100)
 ):
-    """List conversations for the current user."""
+
     cache_key = f"conversations:{current_user.id}:{page}"
     cached = await cache.get_json(cache_key)
     if cached is not None:
         return cached
 
-    # Count total
+
     total_result = await db.execute(
         select(func.count(Conversation.id)).where(
             Conversation.user_id == current_user.id
@@ -65,7 +65,7 @@ async def list_conversations(
     )
     total = total_result.scalar()
     
-    # Get paginated results
+
     offset = (page - 1) * per_page
     result = await db.execute(
         select(Conversation)
@@ -92,7 +92,7 @@ async def get_conversation(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Get a conversation with all messages."""
+
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(conversation_id),
@@ -107,7 +107,7 @@ async def get_conversation(
             detail="Conversation not found"
         )
     
-    # Get messages
+
     messages_result = await db.execute(
         select(Message)
         .where(Message.conversation_id == conversation.id)
@@ -134,7 +134,7 @@ async def update_conversation(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Update a conversation."""
+
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(conversation_id),
@@ -155,7 +155,7 @@ async def update_conversation(
         if data.database_connection_id is not None:
             conversation.database_connection_id = data.database_connection_id
         
-        await db.commit()  # Maybe commit was missing?
+        await db.commit()
         await db.refresh(conversation)
         return conversation
     except Exception as e:
@@ -170,7 +170,7 @@ async def delete_conversation(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Delete a conversation."""
+
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(conversation_id),
@@ -187,7 +187,7 @@ async def delete_conversation(
     
     await db.delete(conversation)
     
-    # Invalidate caches
+
     await cache.invalidate_pattern(f"conversations:{current_user.id}:*")
     await cache.delete(f"messages:{conversation_id}")
 
@@ -198,7 +198,7 @@ async def list_messages(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """List messages in a conversation."""
+
     cache_key = f"messages:{conversation_id}"
     cached = await cache.get_json(cache_key)
     if cached is not None:
@@ -236,8 +236,8 @@ async def add_message(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Add a message to a conversation."""
-    # Verify conversation exists and belongs to user
+
+
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(conversation_id),
@@ -261,21 +261,21 @@ async def add_message(
     db.add(message)
     await db.flush()
 
-    # Invalidate messages cache
+
     await cache.delete(f"messages:{conversation_id}")
     
     return message
 
 
-# Reports endpoints
+
 @router.get("/{conversation_id}/reports", response_model=list[ReportResponse])
 async def list_reports(
     conversation_id: str,
     current_user: CurrentUser,
     db: DbSession
 ):
-    """List reports for a conversation."""
-    # Verify conversation exists and belongs to user
+
+
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(conversation_id),
@@ -301,8 +301,8 @@ async def create_report(
     current_user: CurrentUser,
     db: DbSession
 ):
-    """Save a report from a conversation."""
-    # Verify conversation exists and belongs to user
+
+
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == UUID(conversation_id),
