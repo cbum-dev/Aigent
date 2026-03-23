@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aigent-1.onrender.com";
 
 interface RequestOptions extends RequestInit {
     token?: string;
@@ -151,10 +151,8 @@ class ApiClient {
 
     getWsUrl(token: string, conversationId: string): string {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const host = process.env.NEXT_PUBLIC_API_URL
-            ? new URL(process.env.NEXT_PUBLIC_API_URL).host
-            : "localhost:8000";
-        return `${protocol}//${host}/chat/${conversationId}?token=${token}`;
+        const url = new URL(this.baseUrl);
+        return `${protocol}//${url.host}/chat/${conversationId}?token=${token}`;
     }
 
     async getConversation(token: string, conversationId: string) {

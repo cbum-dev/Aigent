@@ -40,6 +40,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"DEBUG: Could not parse database URL for logging: {e}")
 
+    # Debug CORS and Port
+    print(f"DEBUG: CORS_ORIGINS: {settings.cors_origins}")
+    print(f"DEBUG: PORT: {os.getenv('PORT', '8000 (default)')}")
+    print(f"DEBUG: Using Redis URL: {settings.redis_url}")
+
     await init_db()
     await init_redis(settings.redis_url)
     yield
@@ -56,10 +61,17 @@ app = FastAPI(
 )
 
 
+# Configure CORS
+_allow_origins = settings.cors_origins
+_allow_credentials = True
+
+if "*" in _allow_origins:
+    _allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_origins=_allow_origins,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -88,9 +100,10 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.getenv("PORT", 8000))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=settings.debug
     )

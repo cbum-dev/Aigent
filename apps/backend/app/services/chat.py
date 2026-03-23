@@ -130,37 +130,29 @@ class ChatService:
             ):
                 kind = event["event"]
                 
+                # Yield a ping on every major event to keep Render connection alive
+                if kind.endswith("_start"):
+                    yield json.dumps({"type": "ping"})
+
                 # Filter for node completion events that update state
-                # Specifically looking for "on_chain_end" where the output is a dict with 'agent_messages'
                 if kind == "on_chain_end":
+                    node_name = event.get("name")
                     data = event["data"].get("output")
-                    if isinstance(data, dict):
-                        # Use the new agent_messages to stream updates
-                        # But we only want to stream *new* messages. 
-                        # Since we can't easily track delta here without state,
-                        # we rely on the specific agent node outputs which usually return just their own update
-                        # OR create specific events inside the nodes.
-                        
-                        # Better approach: Check event name against known nodes
-                        node_name = event.get("name")
-                        
-                        if node_name in [
-                            "query_planner", "sql_writer", "sql_executor", 
-                            "visualization", "insight", "supervisor"
-                        ]:
-                            # Send a specific event for this node
-                            # Extract content from AgentMessage if present
-                            msgs = data.get("agent_messages", [])
-                            if msgs:
-                                last_msg = msgs[-1]
-                                # Ensure the message actually belongs to this agent
-                                if last_msg["agent"] == node_name:
-                                    yield json.dumps({
-                                        "type": "thought",
-                                        "agent": node_name,
-                                        "content": last_msg["content"],
-                                        "msg_type": last_msg["type"]
-                                    })
+                    
+                    if isinstance(data, dict) and node_name in [
+                        "query_planner", "sql_writer", "sql_executor", 
+                        "visualization", "insight", "supervisor"
+                    ]:
+                        msgs = data.get("agent_messages", [])
+                        if msgs:
+                            last_msg = msgs[-1]
+                            if last_msg["agent"] == node_name:
+                                yield json.dumps({
+                                    "type": "thought",
+                                    "agent": node_name,
+                                    "content": last_msg["content"],
+                                    "msg_type": last_msg["type"]
+                                })
 
                 # Also yield the final output
                 if kind == "on_chain_end" and event.get("name") == "LangGraph":

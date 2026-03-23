@@ -434,7 +434,7 @@ function SchemaTab({ connectionId }: { connectionId: string }) {
         (async () => {
             try {
                 const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/connections/${connectionId}/schema`,
+                    `${process.env.NEXT_PUBLIC_API_URL || "https://aigent-1.onrender.com"}/connections/${connectionId}/schema`,
                     { headers: { Authorization: `Bearer ${accessToken}` } }
                 );
                 if (res.ok) setSchema(await res.json());

@@ -114,7 +114,7 @@ export default function ConnectionsPage() {
         if (!accessToken || !renameValue.trim()) { setRenamingId(null); return; }
         try {
             await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/connections/${id}`,
+                `${process.env.NEXT_PUBLIC_API_URL || "https://aigent-1.onrender.com"}/connections/${id}`,
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
