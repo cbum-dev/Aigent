@@ -58,7 +58,7 @@ export function Hero() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="h-12 px-8 text-base backdrop-blur-sm bg-background/50 hover:bg-accent/10 border-foreground/10" asChild>
-                <Link href="/demo">
+                <Link href="#demo">
                   Watch Demo
                 </Link>
               </Button>
@@ -71,14 +71,14 @@ export function Hero() {
               <div className="relative z-10 rounded-xl border border-border bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden aspect-16/10">
                 {/* Product Image - Swaps based on theme */}
                    <img 
-                      src="/hero.png" 
+                  src="/hero-dark.png" 
                   alt="Aigent Dashboard Dark"
-                  className="w-full h-full object-cover opacity-90 hidden dark:block"
+                  className="w-full h-full object-fill opacity-90 hidden dark:block"
                 />
                 <img
-                  src="/hero_light.png"
+                  src="/hero-light.png"
                   alt="Aigent Dashboard Light"
-                  className="w-full h-full object-cover opacity-90 block dark:hidden"
+                  className="w-full h-full object-fill opacity-90 block dark:hidden"
                    />
                    
                    {/* Overlay Gradient */}
