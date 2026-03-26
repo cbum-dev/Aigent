@@ -4,7 +4,7 @@ import { Hero } from "@/components/home/hero";
 import { Features } from "@/components/home/features";
 import { HowItWorks } from "@/components/home/how-it-works";
 import { CTA } from "@/components/home/cta";
-import { Demo } from "@/components/home/demo";
+// import { Demo } from "@/components/home/demo";
 import { UseCases } from "@/components/home/use-cases";
 import { LoopBanner } from "@/components/home/loop-banner";
 import { ChartsShowcase } from "@/components/home/charts-showcase";

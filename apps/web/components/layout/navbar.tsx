@@ -22,10 +22,10 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-primary/10 bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center px-4 md:px-6 mx-auto justify-between">
         <Link href="/" className="mr-6 flex items-center space-x-2">
-          <div className="h-6 w-6 bg-primary rounded-md flex items-center justify-center">
-             <Sparkles className="h-4 w-4 text-primary-foreground" />
+          <div className="h-8 w-8 relative flex items-center justify-center">
+             <img src="/logo.png" alt="Aigent Logo" className="h-full w-full object-contain" />
           </div>
-          <span className="font-bold sm:inline-block">
+          <span className="font-bold sm:inline-block text-xl tracking-tight bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70">
             Aigent
           </span>
         </Link>
@@ -87,10 +87,10 @@ export function Navbar() {
               <SheetContent side="right">
                 <div className="flex flex-col gap-6 mt-6">
                   <Link href="/" className="flex items-center space-x-2">
-                    <div className="h-6 w-6 bg-primary rounded-md flex items-center justify-center">
-                      <Sparkles className="h-4 w-4 text-primary-foreground" />
+                    <div className="h-8 w-8 relative flex items-center justify-center">
+                      <img src="/logo.png" alt="Aigent Logo" className="h-full w-full object-contain" />
                     </div>
-                    <span className="font-bold">Aigent</span>
+                    <span className="font-bold text-xl tracking-tight">Aigent</span>
                   </Link>
                   <nav className="flex flex-col gap-4">
                     <Link href="#features" className="text-foreground/60 hover:text-foreground transition-colors">

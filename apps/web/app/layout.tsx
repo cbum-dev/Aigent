@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   title: "Aigent - AI-Powered Business Analytics",
   description:
     "Ask questions in natural language and get AI-powered insights from your data",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
