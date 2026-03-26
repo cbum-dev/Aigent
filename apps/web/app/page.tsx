@@ -20,7 +20,7 @@ export default function Home() {
         <ChartsShowcase />
         <UseCases />
         <HowItWorks />
-        <Demo />
+        {/* <Demo /> */}
         <CTA />
       </main>
       <Footer />
