@@ -9,6 +9,8 @@ import { UseCases } from "@/components/home/use-cases";
 import { LoopBanner } from "@/components/home/loop-banner";
 import { ChartsShowcase } from "@/components/home/charts-showcase";
 
+import { BackendWarmingBanner } from "@/components/BackendWarmingBanner";
+
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-primary/30">
@@ -24,6 +26,7 @@ export default function Home() {
         <CTA />
       </main>
       <Footer />
+      <BackendWarmingBanner />
     </div>
   );
 }
